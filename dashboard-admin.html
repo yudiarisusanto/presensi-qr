@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PresensiQR - Dashboard Admin</title>
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- QR Code Libraries -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.4/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <!-- Library untuk Download ZIP Kartu -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#004349",
+                        "primary-container": "#0d5c63",
+                        "primary-fixed": "#abeef6",
+                        "primary-fixed-dim": "#8fd1d9",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#002023",
+                        "on-primary-container": "#90d2da",
+                        "on-primary-fixed-variant": "#004f55",
+                        
+                        "secondary": "#48626e",
+                        "secondary-container": "#cbe7f5",
+                        "secondary-fixed": "#cbe7f5",
+                        "secondary-fixed-dim": "#afcbd8",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed": "#021f29",
+                        "on-secondary-container": "#4e6874",
+                        "on-secondary-fixed-variant": "#304a55",
+                        
+                        "tertiary": "#5c310d",
+                        "tertiary-container": "#784722",
+                        "tertiary-fixed": "#ffdcc6",
+                        "tertiary-fixed-dim": "#fcb889",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#301400",
+                        "on-tertiary-container": "#fcb88a",
+                        "on-tertiary-fixed-variant": "#693b17",
+                        
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        
+                        "background": "#f8fafa",
+                        "surface": "#f8fafa",
+                        "surface-bright": "#f8fafa",
+                        "surface-dim": "#d8dada",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f2f4f4",
+                        "surface-container": "#eceeee",
+                        "surface-container-high": "#e6e8e8",
+                        "surface-container-highest": "#e1e3e3",
+                        "surface-variant": "#e1e3e3",
+                        
+                        "on-background": "#191c1d",
+                        "on-surface": "#191c1d",
+                        "on-surface-variant": "#3f484a",
+                        
+                        "outline": "#6f797a",
+                        "outline-variant": "#bfc8c9",
+                        
+                        "inverse-surface": "#2e3131",
+                        "inverse-on-surface": "#eff1f1",
+                        "inverse-primary": "#8fd1d9",
+                        
+                        "surface-tint": "#20686f"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "stack-lg": "32px",
+                        "gutter": "16px",
+                        "container-padding": "24px",
+                        "stack-md": "16px",
+                        "base": "8px",
+                        "stack-sm": "8px"
+                    },
+                    fontFamily: {
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    fontSize: {
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["26px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <style>
+        /* Tambahan styling khusus dashboard */
+        .scanner-overlay { position: relative; overflow: hidden; }
+        .scan-line {
+            position: absolute; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, #004349, transparent);
+            animation: scan 2s linear infinite;
+        }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        
+        .tab-content { display: none; opacity: 0; transition: opacity 0.3s ease-in-out; }
+        .tab-content.active { display: block; opacity: 1; }
+        
+        .tab-btn.active { background-color: #ffffff; color: #004349; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .tab-btn:not(.active) { color: #ffffff; }
+        
+        /* Styling untuk popup profil */
+        .profile-popup-enter {
+            animation: popupFadeIn 0.2s ease-out;
+        }
+        @keyframes popupFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* ==========================================
+           DARK MODE STYLING DASAR
+           ========================================== */
+        .dark body {
+            background-color: #191c1d !important;
+            color: #eff1f1 !important;
+        }
+        
+        .dark .bg-background,
+        .dark .bg-surface {
+            background-color: #191c1d !important;
+        }
+        
+        .dark .bg-surface-container-lowest {
+            background-color: #2e3131 !important;
+        }
+        
+        .dark .bg-surface-container-low {
+            background-color: #272a2b !important;
+        }
+        
+        .dark .bg-surface-container {
+            background-color: #2e3131 !important;
+        }
+        
+        .dark .bg-surface-container-high {
+            background-color: #393c3d !important;
+        }
+        
+        .dark .bg-white {
+            background-color: #2e3131 !important;
+        }
+        
+        .dark .text-on-surface {
+            color: #eff1f1 !important;
+        }
+        
+        .dark .text-on-surface-variant {
+            color: #bfc8c9 !important;
+        }
+        
+        .dark .text-on-background {
+            color: #eff1f1 !important;
+        }
+        
+        .dark .border-outline-variant\/30,
+        .dark .border-outline-variant {
+            border-color: rgba(111, 121, 122, 0.5) !important;
+        }
+        
+        .dark .hover\:bg-surface-container-highest:hover {
+            background-color: #393c3d !important;
+        }
+        
+        .dark .hover\:bg-surface-container-low:hover {
+            background-color: #272a2b !important;
+        }
+        
+        .dark .hover\:bg-red-50:hover {
+            background-color: rgba(186, 26, 26, 0.2) !important;
+        }
+        
+        /* Dark mode untuk sidebar */
+        .dark #sidebar {
+            background-color: #2e3131 !important;
+        }
+        
+        /* Dark mode untuk card */
+        .dark .stat-card {
+            background-color: #2e3131 !important;
+        }
+        
+        /* Dark mode untuk input */
+        .dark input, .dark select, .dark textarea {
+            background-color: #272a2b !important;
+            color: #eff1f1 !important;
+            border-color: rgba(111, 121, 122, 0.5) !important;
+        }
+        
+        /* Dark mode untuk popup profil */
+        .dark #profilePopup {
+            background-color: #2e3131 !important;
+        }
+        
+        .dark #profilePopup button:not([style*="background: linear-gradient"]) {
+            color: #eff1f1 !important;
+        }
+        
+        .dark #profilePopup .text-on-surface-variant {
+            color: #bfc8c9 !important;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen">
+    
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-white/80 z-[9999] flex items-center justify-center hidden">
+        <div class="text-center">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="text-on-surface-variant font-label-md" id="loadingText">Memuat...</p>
+        </div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-[9998] space-y-2"></div>
+    
+    <!-- Modal Konfirmasi -->
+    <div id="modalConfirm" class="fixed inset-0 z-[9997] hidden">
+        <div class="modal-overlay absolute inset-0" onclick="closeModalConfirm()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container-lowest rounded-xl p-6 shadow-xl max-w-md w-full mx-4">
+            <div class="flex items-start gap-4 mb-4">
+                <div class="w-12 h-12 rounded-full bg-error-container flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-error">warning</span>
+                </div>
+                <div>
+                    <h3 class="font-headline-sm text-on-surface mb-2" id="modalConfirmTitle">Konfirmasi</h3>
+                    <p class="font-body-md text-on-surface-variant" id="modalConfirmMessage">Apakah Anda yakin?</p>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModalConfirm()" class="px-4 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest">Batal</button>
+                <button id="modalConfirmBtn" onclick="executeModalConfirm()" class="px-4 py-2 rounded-lg bg-primary text-on-primary hover:opacity-90">Ya</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- HALAMAN UTAMA -->
+    <div class="flex min-h-screen">
+        
+        <!-- SIDEBAR -->
+        <!-- Klik logo PresensiQR untuk toggle expand/collapse di SEMUA perangkat -->
+        <nav id="sidebar" class="fixed left-0 top-0 h-full z-50 bg-surface-container-lowest flex flex-col pt-0 pb-stack-lg border-r border-outline-variant sidebar-expanded">
+            
+            <!-- Header Logo - DAPAT DIKLIK untuk toggle sidebar -->
+            <div class="px-gutter mb-stack-lg h-16 flex items-center">
+                <div class="sidebar-logo font-headline-sm text-headline-sm text-primary flex items-center gap-2" 
+                     onclick="toggleSidebar()" title="Klik untuk membuka/menutup menu">
+                    <span class="material-symbols-outlined sidebar-logo-icon text-[24px]" style="font-variation-settings: 'FILL' 1;">qr_code_2</span>
+                    <span class="sidebar-text">PresensiQR</span>
+                </div>
+            </div>
+            
+            <!-- User Profile -->
+            <div class="sidebar-profile px-gutter mb-stack-md flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-primary font-bold shrink-0">
+                    <span id="sidebarUserInitial">A</span>
+                </div>
+                <div class="sidebar-profile-text overflow-hidden">
+                    <p class="font-label-md text-label-md text-on-surface truncate" id="sidebarUserName">Admin Guru</p>
+                    <p class="text-xs text-on-surface-variant truncate" id="sidebarUserLevel">SMK Negeri 1</p>
+                </div>
+            </div>
+            
+            <!-- Menu Navigasi -->
+            <div class="flex-1 overflow-y-auto px-base">
+                <ul class="space-y-1">
+                    <!-- Dashboard -->
+                    <li>
+                        <a class="nav-item active flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer" 
+                           data-page="dashboardAdmin" data-tooltip="Dashboard" onclick="loadPage('dashboardAdmin')">
+                            <span class="material-symbols-outlined">dashboard</span>
+                            <span class="font-label-md text-label-md sidebar-text">Dashboard</span>
+                        </a>
+                    </li>
+                    
+                    <!-- Data Master Dropdown -->
+                    <li class="group/dropdown">
+                        <button class="group-dropdown-btn w-full flex items-center justify-between px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all" onclick="toggleDropdown(this)">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined">database</span>
+                                <span class="font-label-md text-label-md sidebar-text">Data Master</span>
+                            </div>
+                            <span class="material-symbols-outlined transition-transform duration-300 chevron sidebar-chevron">expand_more</span>
+                        </button>
+                        <ul class="group-dropdown-menu mt-1 space-y-1 pl-9 overflow-hidden transition-all duration-300 hidden">
+                            <li>
+                                <a class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer" 
+                                   data-page="masterSiswa" data-tooltip="Data Siswa" onclick="loadPage('masterSiswa')">
+                                    <span class="material-symbols-outlined text-[20px]">person</span>
+                                    <span class="font-label-md text-label-md sidebar-text">Data Siswa</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer" 
+                                   data-page="masterMapel" data-tooltip="Mata Pelajaran" onclick="loadPage('masterMapel')">
+                                    <span class="material-symbols-outlined text-[20px]">book</span>
+                                    <span class="font-label-md text-label-md sidebar-text">Mata Pelajaran</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer" 
+                                   data-page="masterJadwal" data-tooltip="Jadwal Pelajaran" onclick="loadPage('masterJadwal')">
+                                    <span class="material-symbols-outlined text-[20px]">calendar_month</span>
+                                    <span class="font-label-md text-label-md sidebar-text">Jadwal Pelajaran</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <!-- QR Generator -->
+                    <li>
+                        <a class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer" 
+                           data-page="qrGenerator" data-tooltip="QR Generator" onclick="loadPage('qrGenerator')">
+                            <span class="material-symbols-outlined">qr_code_2</span>
+                            <span class="font-label-md text-label-md sidebar-text">QR Generator</span>
+                        </a>
+                    </li>
+                    
+                    <!-- QR Scanner -->
+                    <li>
+                        <a class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer" 
+                           data-page="qrScanner" data-tooltip="Scanner" onclick="loadPage('qrScanner')">
+                            <span class="material-symbols-outlined">qr_code_scanner</span>
+                            <span class="font-label-md text-label-md sidebar-text">Scanner</span>
+                        </a>
+                    </li>
+                    
+                    <!-- Rekap Presensi -->
+                    <li>
+                        <a class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer" 
+                           data-page="rekapAbsen" data-tooltip="Rekap Presensi" onclick="loadPage('rekapAbsen')">
+                            <span class="material-symbols-outlined">assessment</span>
+                            <span class="font-label-md text-label-md sidebar-text">Rekap Presensi</span>
+                        </a>
+                    </li>
+                    
+                    <!-- Pengaturan -->
+                    <li>
+                        <a class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer" 
+                           data-page="pengaturan" data-tooltip="Pengaturan" onclick="loadPage('pengaturan')">
+                            <span class="material-symbols-outlined">settings</span>
+                            <span class="font-label-md text-label-md sidebar-text">Pengaturan</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Tombol Logout -->
+            <div class="px-gutter mt-4">
+                <button onclick="doLogout()" class="logout-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border-2 border-red-500 text-red-500 hover:bg-red-50 transition-all font-semibold">
+                    <span class="material-symbols-outlined">logout</span>
+                    <span class="logout-text">Keluar</span>
+                </button>
+            </div>
+        </nav>
+        
+        <!-- MAIN CONTENT -->
+        <!-- class="main-content sidebar-expanded" - default state expanded -->
+        <main class="main-content sidebar-expanded flex-1 w-full">
+            
+            <!-- HEADER BARU - Notifikasi, Dark/Light Mode, Foto Profil + Popup -->
+            <header class="flex justify-between items-center px-container-padding h-16 w-full sticky top-0 z-40 border-b border-outline-variant/30 shadow-sm" 
+                    style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleMobileSidebar()" class="mobile-menu-btn" style="color: white;">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
+                    <h1 class="text-headline-md font-headline-md font-bold" style="color: white;">PresensiQR</h1>
+                </div>
+                <div class="flex items-center gap-4">
+                    <!-- Ikon Notifikasi (Lonceng) -->
+                    <button onclick="tampilkanNotifikasi()" class="relative p-2 rounded-lg hover:bg-white/10 transition-colors" style="color: white;" title="Notifikasi">
+                        <span class="material-symbols-outlined">notifications</span>
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                    </button>
+                    
+                    <!-- Ikon Dark/Light Mode -->
+                    <button onclick="toggleDarkMode()" class="p-2 rounded-lg hover:bg-white/10 transition-colors" style="color: white;" title="Ganti Mode Tampilan">
+                        <span class="material-symbols-outlined" id="darkModeIcon">dark_mode</span>
+                    </button>
+                    
+                    <!-- Foto Profil + Teks (bisa diklik untuk popup) -->
+                    <div class="relative" id="profileContainer">
+                        <button onclick="toggleProfilePopup()" class="flex items-center gap-3 pl-3 pr-2 py-1.5 rounded-lg hover:bg-white/10 transition-colors">
+                            <div class="text-right hidden sm:block">
+                                <p class="text-sm font-semibold leading-tight" style="color: white;" id="headerUserName">Admin Guru</p>
+                                <p class="text-xs leading-tight" style="color: rgba(255,255,255,0.7);" id="headerUserLevel">Super Admin</p>
+                            </div>
+                            <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold shrink-0 overflow-hidden border-2 border-white/30" 
+                                 style="background: rgba(255,255,255,0.2); color: white;">
+                                <span id="headerUserInitial">A</span>
+                            </div>
+                        </button>
+                        
+                        <!-- Popup Dropdown Profil -->
+                        <div id="profilePopup" class="hidden absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-outline-variant/30 overflow-hidden z-50 profile-popup-enter">
+                            <!-- Bagian Atas: Foto + Nama -->
+                            <div class="p-5 border-b border-outline-variant/20" style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-16 h-16 rounded-full flex items-center justify-center font-bold text-xl shrink-0 border-2 border-white/50" 
+                                         style="background: rgba(255,255,255,0.2); color: white;">
+                                        <span id="popupUserInitial">A</span>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-base" style="color: white;" id="popupUserName">Admin Guru</p>
+                                        <p class="text-sm" style="color: rgba(255,255,255,0.8);" id="popupUserLevel">Super Admin</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Menu Menu -->
+                            <div class="py-2">
+                                <button onclick="tampilkanProfilAdmin()" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-low transition-colors text-left">
+                                    <span class="material-symbols-outlined text-on-surface-variant">person</span>
+                                    <span class="text-sm font-medium text-on-surface">Profil</span>
+                                </button>
+                                <button onclick="bukaPengaturanAkun()" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-low transition-colors text-left">
+                                    <span class="material-symbols-outlined text-on-surface-variant">manage_accounts</span>
+                                    <span class="text-sm font-medium text-on-surface">Akun</span>
+                                </button>
+                                <button onclick="toggleDarkModeFromPopup()" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-low transition-colors text-left">
+                                    <span class="material-symbols-outlined text-on-surface-variant">brush</span>
+                                    <span class="text-sm font-medium text-on-surface">Penampilan</span>
+                                </button>
+                                <div class="border-t border-outline-variant/20 my-1"></div>
+                                <button onclick="keluarAkun()" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-left">
+                                    <span class="material-symbols-outlined text-red-500">logout</span>
+                                    <span class="text-sm font-medium text-red-500">Keluar</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- KONTEN DINAMIS -->
+            <div id="content-area" class="p-container-padding max-w-[1440px] mx-auto w-full">
+                <!-- Konten akan dimuat di sini oleh JavaScript -->
+            </div>
+        </main>
+    </div>
+    
+    <!-- JavaScript Files -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/scanner.js"></script>
+    <script src="js/main.js"></script>
+    
+    <script>
+        // Inisialisasi
+        initSupabase();
+        checkSession('admin');
+        
+        // ============================================================
+        // FUNGSI TOGGLE SIDEBAR - EXPAND / COLLAPSE
+        // ============================================================
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            
+            if (!sidebar) return;
+            
+            const isCurrentlyCollapsed = sidebar.classList.contains('sidebar-collapsed');
+            
+            if (isCurrentlyCollapsed) {
+                sidebar.classList.remove('sidebar-collapsed');
+                sidebar.classList.add('sidebar-expanded');
+                if (mainContent) {
+                    mainContent.classList.remove('sidebar-collapsed');
+                    mainContent.classList.add('sidebar-expanded');
+                    mainContent.classList.remove('sidebar-mobile-full');
+                }
+                localStorage.setItem('sidebarCollapsed', 'false');
+            } else {
+                sidebar.classList.remove('sidebar-expanded');
+                sidebar.classList.add('sidebar-collapsed');
+                if (mainContent) {
+                    mainContent.classList.remove('sidebar-expanded');
+                    mainContent.classList.add('sidebar-collapsed');
+                    mainContent.classList.remove('sidebar-mobile-full');
+                }
+                localStorage.setItem('sidebarCollapsed', 'true');
+            }
+        }
+        
+        // ============================================================
+        // FUNGSI TOGGLE MOBILE SIDEBAR
+        // ============================================================
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            
+            if (!sidebar) return;
+            
+            const isHidden = sidebar.classList.contains('sidebar-mobile-hidden');
+            
+            if (isHidden) {
+                sidebar.classList.remove('sidebar-mobile-hidden');
+                if (mainContent) {
+                    mainContent.classList.remove('sidebar-mobile-full');
+                }
+                initSidebarState();
+            } else {
+                sidebar.classList.add('sidebar-mobile-hidden');
+                if (mainContent) {
+                    mainContent.classList.add('sidebar-mobile-full');
+                    mainContent.classList.remove('sidebar-expanded', 'sidebar-collapsed');
+                }
+            }
+        }
+        
+        // ============================================================
+        // INISIALISASI STATE SIDEBAR
+        // ============================================================
+        function initSidebarState() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            
+            if (!sidebar) return;
+            if (sidebar.classList.contains('sidebar-mobile-hidden')) return;
+            
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            
+            sidebar.classList.remove('sidebar-expanded', 'sidebar-collapsed');
+            if (mainContent) {
+                mainContent.classList.remove('sidebar-expanded', 'sidebar-collapsed', 'sidebar-mobile-full');
+            }
+            
+            if (isCollapsed) {
+                sidebar.classList.add('sidebar-collapsed');
+                if (mainContent) mainContent.classList.add('sidebar-collapsed');
+            } else {
+                sidebar.classList.add('sidebar-expanded');
+                if (mainContent) mainContent.classList.add('sidebar-expanded');
+            }
+        }
+        
+        // ============================================================
+        // FUNGSI PROFILE POPUP
+        // ============================================================
+        function toggleProfilePopup() {
+            const popup = document.getElementById('profilePopup');
+            if (popup) {
+                popup.classList.toggle('hidden');
+                if (!popup.classList.contains('hidden')) {
+                    popup.classList.add('profile-popup-enter');
+                }
+            }
+        }
+        
+        function closeProfilePopup() {
+            const popup = document.getElementById('profilePopup');
+            if (popup) {
+                popup.classList.add('hidden');
+            }
+        }
+        
+        // Tutup popup saat klik di luar area popup
+        document.addEventListener('click', function(event) {
+            const container = document.getElementById('profileContainer');
+            const popup = document.getElementById('profilePopup');
+            
+            if (container && popup && !container.contains(event.target)) {
+                popup.classList.add('hidden');
+            }
+        });
+        
+        // ============================================================
+        // FUNGSI DARK/LIGHT MODE
+        // ============================================================
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('darkModeIcon');
+            
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('darkMode', 'false');
+                if (icon) icon.textContent = 'dark_mode';
+                tampilkanPesanSederhana('Mode Terang diaktifkan', 'info');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('darkMode', 'true');
+                if (icon) icon.textContent = 'light_mode';
+                tampilkanPesanSederhana('Mode Gelap diaktifkan', 'info');
+            }
+        }
+        
+        function toggleDarkModeFromPopup() {
+            closeProfilePopup();
+            toggleDarkMode();
+        }
+        
+        function initDarkMode() {
+            const isDark = localStorage.getItem('darkMode') === 'true';
+            const icon = document.getElementById('darkModeIcon');
+            
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                if (icon) icon.textContent = 'light_mode';
+            } else {
+                document.documentElement.classList.remove('dark');
+                if (icon) icon.textContent = 'dark_mode';
+            }
+        }
+        
+        // ============================================================
+        // FUNGSI MENU POPUP - SEMUA BERFUNGSI!
+        // ============================================================
+        
+        // Menu: Profil Admin
+        function tampilkanProfilAdmin() {
+            closeProfilePopup();
+            const contentArea = document.getElementById('content-area');
+            if (!contentArea) return;
+            
+            // Update active menu
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            
+            contentArea.innerHTML = `
+                <div class="page-container active">
+                    <div class="mb-6">
+                        <h2 class="text-headline-md font-headline-md font-bold text-on-surface mb-2">Profil Admin</h2>
+                        <p class="text-on-surface-variant">Informasi detail akun administrator</p>
+                    </div>
+                    
+                    <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden">
+                        <!-- Header Profil -->
+                        <div class="p-8 text-center" style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
+                            <div class="w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center font-bold text-3xl border-4 border-white/50" 
+                                 style="background: rgba(255,255,255,0.2); color: white;">
+                                A
+                            </div>
+                            <h3 class="text-xl font-bold" style="color: white;">Admin Guru</h3>
+                            <p style="color: rgba(255,255,255,0.8);">Super Admin</p>
+                        </div>
+                        
+                        <!-- Detail Informasi -->
+                        <div class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-xs font-label-md text-label-md text-on-surface-variant mb-1">Username</label>
+                                    <p class="font-medium text-on-surface">admin</p>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-label-md text-label-md text-on-surface-variant mb-1">Level Akses</label>
+                                    <p class="font-medium text-on-surface">Administrator</p>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-label-md text-label-md text-on-surface-variant mb-1">Status</label>
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                        Aktif
+                                    </span>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-label-md text-label-md text-on-surface-variant mb-1">Instansi</label>
+                                    <p class="font-medium text-on-surface">SMK Negeri 1</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 pt-6 border-t border-outline-variant/30">
+                                <button onclick="loadPage('pengaturan')" class="px-4 py-2 rounded-lg bg-primary text-on-primary hover:opacity-90 transition-opacity flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-sm">manage_accounts</span>
+                                    Kelola Akun
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Menu: Akun (arahkan ke Pengaturan)
+        function bukaPengaturanAkun() {
+            closeProfilePopup();
+            loadPage('pengaturan');
+        }
+        
+        // Menu: Notifikasi
+        function tampilkanNotifikasi() {
+            tampilkanPesanSederhana('Tidak ada notifikasi baru', 'info');
+        }
+        
+        // Menu: Keluar
+        function keluarAkun() {
+            closeProfilePopup();
+            if (typeof doLogout === 'function') {
+                doLogout();
+            } else {
+                localStorage.removeItem('userSession');
+                window.location.href = 'index.html';
+            }
+        }
+        
+        // ============================================================
+        // FUNGSI BANTUAN
+        // ============================================================
+        
+        // Tampilkan pesan sederhana (gunakan showToast jika tersedia)
+        function tampilkanPesanSederhana(message, type) {
+            if (typeof showToast === 'function') {
+                showToast(message, type);
+            } else {
+                // Fallback sederhana
+                console.log('[Pesan]', message);
+            }
+        }
+        
+        // ============================================================
+        // INISIALISASI SAAT HALAMAN DIMUAT
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            initSidebarState();
+            initDarkMode();
+        });
+        
+        // Update state saat window di-resize
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            
+            if (!sidebar || !mainContent) return;
+            
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('sidebar-mobile-hidden');
+                mainContent.classList.remove('sidebar-mobile-full');
+            }
+            
+            initSidebarState();
+        });
+    </script>
+</body>
+</html>
