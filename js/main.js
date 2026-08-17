@@ -1612,7 +1612,7 @@ function loadQRScanner() {
     contentArea.innerHTML = `
         <div>
             <header class="mb-stack-lg">
-                <h1 class="font-headline-lg text-on-surface mb-2">Scanner QR Code</h1>
+                <h1 class="font-headline-lg text-headline-lg text-on-surface mb-2">Scanner QR Code</h1>
                 <p class="font-body-lg text-on-surface-variant">Arahkan kamera ke kartu QR siswa untuk mencatat absensi otomatis.</p>
             </header>
             
