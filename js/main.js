@@ -109,6 +109,8 @@ function loadPage(pageName) {
         case 'qrGenerator': loadQRGenerator(); break;
         case 'qrScanner': loadQRScanner(); break;
         case 'rekapAbsen': loadRekapAbsen(); break;
+        case 'pusatUnduhan': loadPusatUnduhan(); break;
+        case 'profilPengguna': loadProfilPengguna(); break;
         case 'pengaturan': loadPengaturan(); break;
         default: loadDashboardAdmin();
     }
@@ -216,7 +218,7 @@ async function loadDashboardAdmin() {
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse">
                                 <thead>
-                                    <tr class="text-on-surface-variant text-label-md uppercase tracking-wider border-b border-outline-variant/30">
+                                    <tr class="text-label-md uppercase tracking-wider border-b border-outline-variant/30" style="background: linear-gradient(to bottom right, #004349, #0d5c63); color: white;">
                                         <th class="px-4 py-3">TINGKAT</th>
                                         <th class="px-4 py-3">JURUSAN</th>
                                         <th class="px-4 py-3 text-center">(LAKI-LAKI)</th>
@@ -478,18 +480,10 @@ async function loadMasterSiswa() {
     const contentArea = document.getElementById('content-area');
     contentArea.innerHTML = `
         <div>
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-stack-lg gap-4">
+            <div class="mb-stack-lg">
                 <div>
                     <h1 class="text-headline-lg font-headline-lg text-on-surface mb-1">Data Siswa</h1>
                     <p class="text-body-md text-on-surface-variant">Kelola data lengkap siswa, NISN, kelas, dan jurusan.</p>
-                </div>
-                <div class="flex gap-2 w-full sm:w-auto">
-                    <button onclick="exportSiswa()" class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant text-primary rounded-lg hover:bg-surface-container-low shadow-sm whitespace-nowrap">
-                        <span class="material-symbols-outlined text-[18px]">download</span>Export
-                    </button>
-                    <button onclick="showModalSiswa()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm whitespace-nowrap">
-                        <span class="material-symbols-outlined text-[18px]">add</span>Tambah Siswa
-                    </button>
                 </div>
             </div>
             
@@ -499,7 +493,7 @@ async function loadMasterSiswa() {
                     <input type="text" id="searchSiswa" placeholder="Cari nama atau NISN..." oninput="filterSiswa()"
                         class="w-full pl-10 pr-4 py-2 bg-surface border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container">
                 </div>
-                <div class="flex gap-2 w-full md:w-auto">
+                <div class="flex gap-2 w-full md:w-auto flex-wrap justify-center md:justify-start">
                     <select id="filterKelas" onchange="filterSiswa()" class="w-full md:w-40 px-4 py-2 bg-surface border border-outline-variant rounded-lg">
                         <option value="">Semua Kelas</option>
                         <option value="X">Kelas X</option>
@@ -514,6 +508,12 @@ async function loadMasterSiswa() {
                         <option value="RPL 2">RPL 2</option>
                         <option value="MM 1">MM 1</option>
                     </select>
+                    <button onclick="exportSiswa()" class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant text-primary rounded-lg hover:bg-surface-container-low shadow-sm whitespace-nowrap">
+                        <span class="material-symbols-outlined text-[18px]">download</span>Export
+                    </button>
+                    <button onclick="showModalSiswa()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm whitespace-nowrap">
+                        <span class="material-symbols-outlined text-[18px]">add</span>Tambah Siswa
+                    </button>
                 </div>
             </div>
             
@@ -521,7 +521,7 @@ async function loadMasterSiswa() {
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="bg-[#F1F3F4] text-on-surface-variant text-label-md uppercase tracking-wider border-b whitespace-nowrap">
+                            <tr class="text-label-md uppercase tracking-wider border-b" style="background: linear-gradient(to bottom right, #004349, #0d5c63); color: white; whitespace-nowrap">
                                 <th class="p-3 w-12 text-center">No</th>
                                 <th class="p-3">Nama Siswa</th>
                                 <th class="p-3">Jenis Kelamin</th>
@@ -666,9 +666,18 @@ function renderSiswaTable(data) {
     
     const totalPages = Math.ceil(data.length / siswaPerPage);
     let html = '';
+    
+    // Tombol Previous
+    html += `<button onclick="siswaPage=${Math.max(1, siswaPage - 1)};filterSiswa()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${siswaPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${siswaPage === 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>`;
+    
+    // Nomor halaman
     for (let i = 1; i <= totalPages; i++) {
-        html += `<button onclick="siswaPage=${i};filterSiswa()" class="px-3 py-1 rounded ${i === siswaPage ? 'bg-primary text-on-primary' : 'bg-surface hover:bg-surface-container-highest'} text-sm">${i}</button>`;
+        html += `<button onclick="siswaPage=${i};filterSiswa()" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${i === siswaPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${i}</button>`;
     }
+    
+    // Tombol Next
+    html += `<button onclick="siswaPage=${Math.min(totalPages, siswaPage + 1)};filterSiswa()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${siswaPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" ${siswaPage === totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>`;
+    
     document.getElementById('paginationButtons').innerHTML = html;
 }
 
@@ -775,18 +784,10 @@ async function loadMasterMapel() {
     const contentArea = document.getElementById('content-area');
     contentArea.innerHTML = `
         <div>
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-stack-lg gap-4">
+            <div class="mb-stack-lg">
                 <div>
                     <h1 class="text-headline-lg font-headline-lg text-on-surface mb-1">Mata Pelajaran</h1>
                     <p class="text-body-md text-on-surface-variant">Kelola daftar mata pelajaran, kode, dan guru pengampu.</p>
-                </div>
-                <div class="flex gap-2 w-full sm:w-auto">
-                    <button onclick="exportMapel()" class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant text-primary rounded-lg hover:bg-surface-container-low shadow-sm whitespace-nowrap">
-                        <span class="material-symbols-outlined text-[18px]">download</span>Export
-                    </button>
-                    <button onclick="showModalMapel()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm whitespace-nowrap">
-                        <span class="material-symbols-outlined text-[18px]">add</span>Tambah Mapel
-                    </button>
                 </div>
             </div>
             
@@ -796,13 +797,19 @@ async function loadMasterMapel() {
                     <input type="text" id="searchMapel" placeholder="Cari nama atau kode mapel..." oninput="filterMapel()"
                         class="w-full pl-10 pr-4 py-2 bg-surface border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container">
                 </div>
-                <div class="flex gap-2 w-full md:w-auto">
+                <div class="flex gap-2 w-full md:w-auto flex-wrap justify-center md:justify-start">
                     <select id="filterKelasMapel" onchange="filterMapel()" class="w-full md:w-40 px-4 py-2 bg-surface border border-outline-variant rounded-lg">
                         <option value="">Semua Kelas</option>
                         <option value="10">Kelas 10</option>
                         <option value="11">Kelas 11</option>
                         <option value="12">Kelas 12</option>
                     </select>
+                    <button onclick="exportMapel()" class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant text-primary rounded-lg hover:bg-surface-container-low shadow-sm whitespace-nowrap">
+                        <span class="material-symbols-outlined text-[18px]">download</span>Export
+                    </button>
+                    <button onclick="showModalMapel()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm whitespace-nowrap">
+                        <span class="material-symbols-outlined text-[18px]">add</span>Tambah Mapel
+                    </button>
                 </div>
             </div>
             
@@ -810,7 +817,7 @@ async function loadMasterMapel() {
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="bg-[#F1F3F4] text-on-surface-variant text-label-md uppercase tracking-wider border-b">
+                            <tr class="text-label-md uppercase tracking-wider border-b" style="background: linear-gradient(to bottom right, #004349, #0d5c63); color: white;">
                                 <th class="p-4 w-16 text-center">No</th>
                                 <th class="p-4">Kode Mapel</th>
                                 <th class="p-4">Nama Mata Pelajaran</th>
@@ -921,9 +928,18 @@ function renderMapelTable(data) {
     
     const totalPages = Math.ceil(data.length / mapelPerPage);
     let html = '';
+    
+    // Tombol Previous
+    html += `<button onclick="mapelPage=${Math.max(1, mapelPage - 1)};filterMapel()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${mapelPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${mapelPage === 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>`;
+    
+    // Nomor halaman
     for (let i = 1; i <= totalPages; i++) {
-        html += `<button onclick="mapelPage=${i};filterMapel()" class="px-3 py-1 rounded ${i === mapelPage ? 'bg-primary text-on-primary' : 'bg-surface hover:bg-surface-container-highest'} text-sm">${i}</button>`;
+        html += `<button onclick="mapelPage=${i};filterMapel()" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${i === mapelPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${i}</button>`;
     }
+    
+    // Tombol Next
+    html += `<button onclick="mapelPage=${Math.min(totalPages, mapelPage + 1)};filterMapel()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${mapelPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" ${mapelPage === totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>`;
+    
     document.getElementById('paginationButtonsMapel').innerHTML = html;
 }
 
@@ -1012,6 +1028,8 @@ function exportMapel() {
 // ============================================================
 
 let allJadwalData = [];
+let jadwalPage = 1;
+const jadwalPerPage = 10;
 
 async function loadMasterJadwal() {
     const contentArea = document.getElementById('content-area');
@@ -1027,39 +1045,41 @@ async function loadMasterJadwal() {
     
     contentArea.innerHTML = `
         <div>
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-stack-lg gap-4">
+            <div class="mb-stack-lg">
                 <div>
                     <h1 class="text-headline-lg font-headline-lg text-on-surface mb-1">Jadwal Pelajaran</h1>
                     <p class="text-body-md text-on-surface-variant">Kelola jadwal pelajaran per kelas, hari, dan jam.</p>
                 </div>
-                <button onclick="showModalJadwal()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm whitespace-nowrap">
-                    <span class="material-symbols-outlined text-[18px]">add</span>Tambah Jadwal
-                </button>
             </div>
             
             <div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-surface-container-highest mb-stack-md flex flex-col md:flex-row gap-4 items-center">
-                <select id="filterJadwalKelas" onchange="filterJadwal()" class="w-full md:w-40 px-4 py-2 bg-surface border border-outline-variant rounded-lg">
-                    <option value="">Semua Kelas</option>
-                    <option value="X">Kelas X</option>
-                    <option value="XI">Kelas XI</option>
-                    <option value="XII">Kelas XII</option>
-                </select>
-                <select id="filterJadwalHari" onchange="filterJadwal()" class="w-full md:w-40 px-4 py-2 bg-surface border border-outline-variant rounded-lg">
-                    <option value="">Semua Hari</option>
-                    <option value="Senin">Senin</option>
-                    <option value="Selasa">Selasa</option>
-                    <option value="Rabu">Rabu</option>
-                    <option value="Kamis">Kamis</option>
-                    <option value="Jumat">Jumat</option>
-                    <option value="Sabtu">Sabtu</option>
-                </select>
+                <div class="flex gap-2 w-full md:w-auto flex-wrap justify-center md:justify-start">
+                    <select id="filterJadwalKelas" onchange="jadwalPage=1;filterJadwal()" class="w-full md:w-40 px-4 py-2 bg-surface border border-outline-variant rounded-lg">
+                        <option value="">Semua Kelas</option>
+                        <option value="X">Kelas X</option>
+                        <option value="XI">Kelas XI</option>
+                        <option value="XII">Kelas XII</option>
+                    </select>
+                    <select id="filterJadwalHari" onchange="jadwalPage=1;filterJadwal()" class="w-full md:w-40 px-4 py-2 bg-surface border border-outline-variant rounded-lg">
+                        <option value="">Semua Hari</option>
+                        <option value="Senin">Senin</option>
+                        <option value="Selasa">Selasa</option>
+                        <option value="Rabu">Rabu</option>
+                        <option value="Kamis">Kamis</option>
+                        <option value="Jumat">Jumat</option>
+                        <option value="Sabtu">Sabtu</option>
+                    </select>
+                    <button onclick="showModalJadwal()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm whitespace-nowrap">
+                        <span class="material-symbols-outlined text-[18px]">add</span>Tambah Jadwal
+                    </button>
+                </div>
             </div>
             
             <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container-highest overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="bg-[#F1F3F4] text-on-surface-variant text-label-md uppercase tracking-wider border-b">
+                            <tr class="text-label-md uppercase tracking-wider border-b" style="background: linear-gradient(to bottom right, #004349, #0d5c63); color: white;">
                                 <th class="p-4 w-12 text-center">No</th>
                                 <th class="p-4">Mata Pelajaran</th>
                                 <th class="p-4">Kelas</th>
@@ -1074,6 +1094,11 @@ async function loadMasterJadwal() {
                             <tr><td colspan="8" class="p-8 text-center text-on-surface-variant">Memuat data...</td></tr>
                         </tbody>
                     </table>
+                </div>
+                <!-- PAGINATION -->
+                <div class="px-4 py-3 border-t border-outline-variant/30 bg-surface-container-lowest flex items-center justify-between">
+                    <span class="text-sm text-on-surface-variant" id="paginationInfoJadwal">Menampilkan 0 data</span>
+                    <div class="flex gap-1" id="paginationButtonsJadwal"></div>
                 </div>
             </div>
         </div>
@@ -1174,12 +1199,17 @@ function renderJadwalTable(data) {
     
     if (data.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-on-surface-variant">Tidak ada data jadwal</td></tr>';
+        document.getElementById('paginationInfoJadwal').textContent = 'Menampilkan 0 data';
+        document.getElementById('paginationButtonsJadwal').innerHTML = '';
         return;
     }
     
-    tbody.innerHTML = data.map((j, i) => `
+    const start = (jadwalPage - 1) * jadwalPerPage;
+    const pageData = data.slice(start, start + jadwalPerPage);
+    
+    tbody.innerHTML = pageData.map((j, i) => `
         <tr class="border-b border-surface-container-highest table-row-hover">
-            <td class="p-4 text-center text-on-surface-variant">${i + 1}</td>
+            <td class="p-4 text-center text-on-surface-variant">${start + i + 1}</td>
             <td class="p-4 font-semibold">${j.mapel?.nama_mata_pelajaran || '-'}</td>
             <td class="p-4">${j.kelas}</td>
             <td class="p-4">${j.jurusan || '<span class="text-on-surface-variant">Semua</span>'}</td>
@@ -1192,6 +1222,26 @@ function renderJadwalTable(data) {
             </td>
         </tr>
     `).join('');
+    
+    // Update info pagination
+    document.getElementById('paginationInfoJadwal').textContent = `Menampilkan ${start + 1}-${Math.min(start + jadwalPerPage, data.length)} dari ${data.length} data`;
+    
+    // Generate tombol halaman - SAMA PERSIS dengan Rekap Presensi
+    const totalPages = Math.ceil(data.length / jadwalPerPage);
+    let buttonsHtml = '';
+    
+    // Tombol Previous
+    buttonsHtml += `<button onclick="jadwalPage=${Math.max(1, jadwalPage - 1)};filterJadwal()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${jadwalPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${jadwalPage === 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>`;
+    
+    // Nomor halaman
+    for (let i = 1; i <= totalPages; i++) {
+        buttonsHtml += `<button onclick="jadwalPage=${i};filterJadwal()" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${i === jadwalPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${i}</button>`;
+    }
+    
+    // Tombol Next
+    buttonsHtml += `<button onclick="jadwalPage=${Math.min(totalPages, jadwalPage + 1)};filterJadwal()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${jadwalPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" ${jadwalPage === totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>`;
+    
+    document.getElementById('paginationButtonsJadwal').innerHTML = buttonsHtml;
 }
 
 function showModalJadwal() {
@@ -1269,6 +1319,10 @@ function hapusJadwal(id) {
 // QR GENERATOR & AKUN SISWA
 // ============================================================
 
+let allQRData = [];
+let qrPage = 1;
+const qrPerPage = 10;
+
 async function loadQRGenerator() {
     const contentArea = document.getElementById('content-area');
     
@@ -1279,6 +1333,7 @@ async function loadQRGenerator() {
         const sb = getSupabase();
         const { data } = await sb.from('siswa').select('*').order('nama_lengkap');
         siswaData = data || [];
+        allQRData = siswaData; // Simpan ke variabel global untuk pagination
         countBelum = siswaData.filter(s => s.status_akun !== 'Aktif').length;
         countAktif = siswaData.filter(s => s.status_akun === 'Aktif').length;
     } catch(e) {}
@@ -1298,34 +1353,36 @@ async function loadQRGenerator() {
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
                 <section class="lg:col-span-4 flex flex-col gap-gutter">
                     <div class="bg-surface-container-lowest rounded-xl p-container-padding shadow-sm border border-outline-variant/30 relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -mr-8 -mt-8"></div>
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-bl-full -mr-8 -mt-8"></div>
                         <div class="flex items-center justify-center gap-2 mb-stack-md relative z-10">
-                            <span class="material-symbols-outlined text-primary text-[28px]">vpn_key</span>
-                            <h2 class="font-headline-sm text-headline-sm text-on-surface">Status Kredensial</h2>
+                            <span class="material-symbols-outlined text-red-500 text-[28px]">vpn_key</span>
+                            <h2 class="font-headline-sm text-headline-sm text-red-500">Status Kredensial</h2>
                         </div>
                         <div class="flex items-end justify-center gap-3 mb-stack-md relative z-10">
                             <span class="text-4xl font-bold text-on-surface tracking-tighter">${countBelum}</span>
                             <span class="font-body-md text-body-md text-on-surface-variant pb-1">Siswa belum memiliki akun aktif</span>
                         </div>
                         <div class="w-full bg-surface-variant h-2 rounded-full mb-stack-lg overflow-hidden relative z-10">
-                            <div class="bg-primary h-full rounded-full transition-all duration-500" style="width: ${persentase}%"></div>
+                            <div class="bg-red-500 h-full rounded-full transition-all duration-500" style="width: ${persentase}%"></div>
                         </div>
                         <div class="flex flex-col gap-3 relative z-10">
                             <button onclick="generateAkunMasal()" class="w-full py-3 px-4 bg-primary text-on-primary rounded-lg flex items-center justify-center gap-2 hover:opacity-90 shadow-sm">
                                 <span class="material-symbols-outlined text-[18px]">magic_button</span>Generate Akun Massal
                             </button>
-                            <button onclick="downloadKredensial()" class="w-full py-3 px-4 bg-surface-container-lowest border border-primary text-primary rounded-lg flex items-center justify-center gap-2 hover:bg-surface-container-highest">
-                                <span class="material-symbols-outlined text-[18px]">table_view</span>Download Kredensial (Excel)
-                            </button>
                         </div>
                     </div>
-                    <div class="bg-surface-container-lowest rounded-xl p-stack-md shadow-sm border border-outline-variant/30 flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-secondary-fixed flex items-center justify-center shrink-0">
-                            <span class="material-symbols-outlined text-on-secondary-fixed">check_circle</span>
+                    <div class="bg-surface-container-lowest rounded-xl p-container-padding shadow-sm border border-outline-variant/30 relative overflow-hidden group flex-1 flex flex-col justify-center">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+                        <div class="flex items-center justify-center gap-2 mb-stack-md relative z-10">
+                            <span class="material-symbols-outlined text-green-600 text-[28px]">check_circle</span>
+                            <h2 class="font-headline-sm text-headline-sm text-green-600">Status Validasi</h2>
                         </div>
-                        <div>
-                            <p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Total Akun Aktif</p>
-                            <p class="font-headline-sm text-headline-sm text-on-surface">${countAktif} <span class="text-sm font-normal text-on-surface-variant">siswa</span></p>
+                        <div class="flex items-end justify-center gap-3 mb-stack-md relative z-10">
+                            <span class="text-4xl font-bold text-on-surface tracking-tighter">${countAktif}</span>
+                            <span class="font-body-md text-body-md text-on-surface-variant pb-1">Siswa sudah memiliki akun aktif</span>
+                        </div>
+                        <div class="w-full bg-surface-variant h-2 rounded-full overflow-hidden relative z-10">
+                            <div class="bg-green-500 h-full rounded-full transition-all duration-500" style="width: ${persentase}%"></div>
                         </div>
                     </div>
                 </section>
@@ -1339,6 +1396,20 @@ async function loadQRGenerator() {
                                     <h2 class="font-headline-sm text-headline-sm text-on-surface">Studio Kartu Pelajar</h2>
                                 </div>
                                 <div class="space-y-4">
+                                    <!-- UPLOAD BACKGROUND KARTU -->
+                                    <div>
+                                        <label class="font-label-md text-label-md text-on-surface block mb-2">Background Template Kartu (Opsional)</label>
+                                        <div id="bgKartuUploadArea" class="border-2 border-dashed border-outline-variant rounded-xl p-stack-md flex flex-col items-center justify-center text-center hover:bg-surface-container-low transition-colors cursor-pointer group bg-surface-bright h-40" onclick="document.getElementById('bgKartuInput').click()">
+                                            <div id="bgKartuPlaceholder" class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                                <span class="material-symbols-outlined text-primary">upload_file</span>
+                                            </div>
+                                            <img id="bgKartuPreview" class="w-full h-full object-cover rounded-lg hidden absolute inset-0" alt="Background Kartu">
+                                            <p class="font-label-md text-label-md text-primary mb-1">Klik untuk upload atau drag & drop</p>
+                                            <p class="text-xs text-on-surface-variant">SVG, PNG, JPG (Rasio Portrait 54x86mm)</p>
+                                        </div>
+                                        <input type="file" id="bgKartuInput" accept="image/jpeg,image/png,image/svg+xml" class="hidden" onchange="handleBgKartuUpload(event)">
+                                    </div>
+                                    
                                     <div>
                                         <label class="font-label-md text-label-md text-on-surface block mb-2">Posisi QR Code</label>
                                         <select id="qrPosition" class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2">
@@ -1356,6 +1427,8 @@ async function loadQRGenerator() {
                                 </div>
                                 <div class="flex items-center justify-center">
                                     <div id="idCardPreview" class="w-[215px] h-[342px] bg-white rounded-[10px] shadow-lg relative overflow-hidden border border-gray-200 flex flex-col items-center pt-6 pb-4">
+                                        <!-- Background Image (jika diupload) -->
+                                        <div id="idCardBgImage" class="absolute inset-0 bg-cover bg-center hidden z-0"></div>
                                         <div class="absolute top-0 left-0 w-full h-20 bg-primary"></div>
                                         <div class="absolute top-16 left-0 w-full h-4 bg-secondary-fixed"></div>
                                         <div class="relative z-10 flex flex-col items-center w-full px-4">
@@ -1400,7 +1473,7 @@ async function loadQRGenerator() {
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse">
                                 <thead>
-                                    <tr class="bg-[#F1F3F4] text-on-surface-variant text-label-md uppercase tracking-wider border-b whitespace-nowrap">
+                                    <tr class="text-label-md uppercase tracking-wider border-b" style="background: linear-gradient(to bottom right, #004349, #0d5c63); color: white; whitespace-nowrap">
                                         <th class="p-3 w-12 text-center">
                                             <input type="checkbox" id="checkAll" onchange="toggleCheckAll()" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer">
                                         </th>
@@ -1412,33 +1485,14 @@ async function loadQRGenerator() {
                                     </tr>
                                 </thead>
                                 <tbody id="tableSiswaQR" class="text-body-md text-on-surface">
-                                    ${siswaData.length === 0 ? '<tr><td colspan="6" class="p-8 text-center text-on-surface-variant">Tidak ada data</td></tr>' : 
-                                    siswaData.map(s => {
-                                        const statusWarna = s.status_akun === 'Aktif' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700';
-                                        return `
-                                        <tr class="border-b border-surface-container-highest table-row-hover">
-                                            <td class="p-3 text-center">
-                                                <input type="checkbox" class="siswa-checkbox w-4 h-4 rounded border-outline-variant text-primary cursor-pointer" value="${s.id}" data-nama="${s.nama_lengkap}" data-nisn="${s.nisn}" data-kelas="${s.kelas}" data-jurusan="${s.jurusan}">
-                                            </td>
-                                            <td class="p-3 font-semibold">${s.nama_lengkap}</td>
-                                            <td class="p-3 font-mono">${s.nisn}</td>
-                                            <td class="p-3">${s.kelas} ${s.jurusan}</td>
-                                            <td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${statusWarna}">${s.status_akun}</span></td>
-                                            <td class="p-3 text-center">
-                                                <button onclick="previewKartuSiswa('${s.nama_lengkap}', '${s.nisn}', '${s.kelas} ${s.jurusan}')" class="p-1.5 text-primary hover:bg-primary/10 rounded" title="Preview">
-                                                    <span class="material-symbols-outlined text-[18px]">visibility</span>
-                                                </button>
-                                                <button onclick="generateKartuIndividu('${s.nama_lengkap}', '${s.nisn}', '${s.kelas} ${s.jurusan}')" class="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Download">
-                                                    <span class="material-symbols-outlined text-[18px]">download</span>
-                                                </button>
-                                            </td>
-                                        </tr>`;
-                                    }).join('')}
+                                    <tr><td colspan="6" class="p-8 text-center text-on-surface-variant">Memuat data...</td></tr>
                                 </tbody>
                             </table>
                         </div>
-                        <div class="flex justify-between items-center p-4 bg-surface border-t">
-                            <span class="text-sm text-on-surface-variant">Total ${siswaData.length} siswa</span>
+                        <!-- PAGINATION -->
+                        <div class="px-4 py-3 border-t border-outline-variant/30 bg-surface-container-lowest flex items-center justify-between">
+                            <span class="text-sm text-on-surface-variant" id="paginationInfoQR">Menampilkan 0 data</span>
+                            <div class="flex gap-1" id="paginationButtonsQR"></div>
                         </div>
                     </div>
                 </section>
@@ -1452,7 +1506,146 @@ async function loadQRGenerator() {
             qrContainer.innerHTML = '';
             new QRCode(qrContainer, { text: '0051234567', width: 64, height: 64 });
         }
+        // Render tabel dengan pagination
+        renderQRTable(allQRData);
+        // Load background kartu jika sudah diupload
+        loadBgKartu();
     }, 100);
+}
+
+// ============================================================
+// FUNGSI: Handle Upload Background Kartu
+// ============================================================
+function handleBgKartuUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validasi ukuran file (maks 5MB untuk background)
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('Ukuran file maksimal 5MB!', 'error');
+        return;
+    }
+    
+    // Validasi tipe file
+    if (!['image/jpeg', 'image/png', 'image/svg+xml'].includes(file.type)) {
+        showToast('Format file harus JPG, PNG, atau SVG!', 'error');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const bgData = e.target.result;
+        
+        // Terapkan pada preview kartu
+        const bgElement = document.getElementById('idCardBgImage');
+        const placeholder = document.getElementById('bgKartuPlaceholder');
+        const preview = document.getElementById('bgKartuPreview');
+        
+        if (bgElement) {
+            bgElement.style.backgroundImage = `url(${bgData})`;
+            bgElement.classList.remove('hidden');
+        }
+        if (placeholder) placeholder.classList.add('hidden');
+        if (preview) {
+            preview.src = bgData;
+            preview.classList.remove('hidden');
+        }
+        
+        // Simpan ke localStorage
+        try {
+            localStorage.setItem('presensiQR_bgKartu', bgData);
+            showToast('Background kartu berhasil diunggah!', 'success');
+        } catch(e) {
+            showToast('Gagal menyimpan background!', 'error');
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+// ============================================================
+// FUNGSI: Load Background Kartu saat halaman dimuat
+// ============================================================
+function loadBgKartu() {
+    try {
+        const bgData = localStorage.getItem('presensiQR_bgKartu');
+        if (bgData) {
+            setTimeout(() => {
+                const bgElement = document.getElementById('idCardBgImage');
+                const placeholder = document.getElementById('bgKartuPlaceholder');
+                const preview = document.getElementById('bgKartuPreview');
+                
+                if (bgElement) {
+                    bgElement.style.backgroundImage = `url(${bgData})`;
+                    bgElement.classList.remove('hidden');
+                }
+                if (placeholder) placeholder.classList.add('hidden');
+                if (preview) {
+                    preview.src = bgData;
+                    preview.classList.remove('hidden');
+                }
+            }, 100);
+        }
+    } catch(e) {}
+}
+
+// ============================================================
+// FUNGSI RENDER QR TABLE DENGAN PAGINATION
+// ============================================================
+function renderQRTable(data) {
+    const tbody = document.getElementById('tableSiswaQR');
+    if (!tbody) return;
+    
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-on-surface-variant">Tidak ada data</td></tr>';
+        document.getElementById('paginationInfoQR').textContent = 'Menampilkan 0 data';
+        document.getElementById('paginationButtonsQR').innerHTML = '';
+        return;
+    }
+    
+    const start = (qrPage - 1) * qrPerPage;
+    const pageData = data.slice(start, start + qrPerPage);
+    
+    tbody.innerHTML = pageData.map(s => {
+        const statusWarna = s.status_akun === 'Aktif' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700';
+        return `
+        <tr class="border-b border-surface-container-highest table-row-hover">
+            <td class="p-3 text-center">
+                <input type="checkbox" class="siswa-checkbox w-4 h-4 rounded border-outline-variant text-primary cursor-pointer" value="${s.id}" data-nama="${s.nama_lengkap}" data-nisn="${s.nisn}" data-kelas="${s.kelas}" data-jurusan="${s.jurusan}">
+            </td>
+            <td class="p-3 font-semibold">${s.nama_lengkap}</td>
+            <td class="p-3 font-mono">${s.nisn}</td>
+            <td class="p-3">${s.kelas} ${s.jurusan}</td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${statusWarna}">${s.status_akun}</span></td>
+            <td class="p-3 text-center">
+                <button onclick="previewKartuSiswa('${s.nama_lengkap}', '${s.nisn}', '${s.kelas} ${s.jurusan}')" class="p-1.5 text-primary hover:bg-primary/10 rounded" title="Preview">
+                    <span class="material-symbols-outlined text-[18px]">visibility</span>
+                </button>
+                <button onclick="generateKartuIndividu('${s.nama_lengkap}', '${s.nisn}', '${s.kelas} ${s.jurusan}')" class="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Download">
+                    <span class="material-symbols-outlined text-[18px]">download</span>
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+    
+    // Update info pagination
+    document.getElementById('paginationInfoQR').textContent = `Menampilkan ${start + 1}-${Math.min(start + qrPerPage, data.length)} dari ${data.length} data`;
+    
+    // Generate tombol halaman
+    const totalPages = Math.ceil(data.length / qrPerPage);
+    let buttonsHtml = '';
+    
+    // Tombol Previous
+    buttonsHtml += `<button onclick="qrPage=${Math.max(1, qrPage - 1)};renderQRTable(window.currentQRFiltered || allQRData)" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${qrPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${qrPage === 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>`;
+    
+    // Nomor halaman
+    for (let i = 1; i <= totalPages; i++) {
+        buttonsHtml += `<button onclick="qrPage=${i};renderQRTable(window.currentQRFiltered || allQRData)" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${i === qrPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${i}</button>`;
+    }
+    
+    // Tombol Next
+    buttonsHtml += `<button onclick="qrPage=${Math.min(totalPages, qrPage + 1)};renderQRTable(window.currentQRFiltered || allQRData)" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${qrPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" ${qrPage === totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>`;
+    
+    document.getElementById('paginationButtonsQR').innerHTML = buttonsHtml;
 }
 
 function toggleCheckAll() {
@@ -1462,10 +1655,22 @@ function toggleCheckAll() {
 
 function filterSiswaQR() {
     const search = document.getElementById('searchSiswaQR')?.value.toLowerCase() || '';
-    document.querySelectorAll('#tableSiswaQR tr').forEach(tr => {
-        const text = tr.textContent.toLowerCase();
-        tr.style.display = text.includes(search) ? '' : 'none';
-    });
+    qrPage = 1; // Reset ke halaman 1 saat filter berubah
+    
+    if (!search) {
+        window.currentQRFiltered = null;
+        renderQRTable(allQRData);
+        return;
+    }
+    
+    window.currentQRFiltered = allQRData.filter(s => 
+        s.nama_lengkap?.toLowerCase().includes(search) || 
+        s.nisn?.toLowerCase().includes(search) ||
+        s.kelas?.toLowerCase().includes(search) ||
+        s.jurusan?.toLowerCase().includes(search)
+    );
+    
+    renderQRTable(window.currentQRFiltered);
 }
 
 function previewKartuSiswa(nama, nisn, kelas) {
@@ -1618,15 +1823,16 @@ function loadQRScanner() {
             
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
                 <div class="lg:col-span-2 bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden">
-                    <div class="p-4 border-b flex items-center justify-between bg-surface-bright">
-                        <h2 class="font-headline-sm text-on-surface flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary">videocam</span>Kamera Scanner
+                    <div class="px-4 py-3 flex items-center justify-between" 
+                         style="background: linear-gradient(to bottom right, #004349, #0d5c63); height: 52px; min-height: 52px;">
+                        <h2 class="font-headline-sm text-headline-sm flex items-center gap-2" style="color: white;">
+                            <span class="material-symbols-outlined" style="color: white;">videocam</span>Kamera Scanner
                         </h2>
                         <div class="flex gap-2">
-                            <button onclick="initScanner()" id="btnMulaiScanner" class="px-3 py-1.5 bg-primary text-on-primary rounded-lg text-sm hover:opacity-90 flex items-center gap-1">
+                            <button onclick="initScanner()" id="btnMulaiScanner" class="px-3 py-1.5 bg-white text-primary rounded-lg text-sm hover:bg-surface-container-low transition-colors flex items-center gap-1 font-semibold">
                                 <span class="material-symbols-outlined text-[16px]">play_arrow</span>Mulai
                             </button>
-                            <button onclick="berhentiScanner()" id="btnBerhentiScanner" class="px-3 py-1.5 bg-error text-on-error rounded-lg text-sm hover:opacity-90 flex items-center gap-1 hidden">
+                            <button onclick="berhentiScanner()" id="btnBerhentiScanner" class="px-3 py-1.5 bg-white text-error rounded-lg text-sm hover:bg-surface-container-low transition-colors flex items-center gap-1 font-semibold hidden">
                                 <span class="material-symbols-outlined text-[16px]">stop</span>Berhenti
                             </button>
                         </div>
@@ -1641,12 +1847,18 @@ function loadQRScanner() {
                 </div>
                 
                 <div class="space-y-6">
-                    <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 p-5">
-                        <h3 class="font-headline-sm text-on-surface mb-4 flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary">info</span>Info Jam Pelajaran
-                        </h3>
-                        <div id="infoJadwalSekarang" class="text-sm">
-                            <p class="text-on-surface-variant">Memuat jadwal...</p>
+                    <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden">
+                        <div class="px-4 py-3 flex items-center justify-between" 
+                             style="background: linear-gradient(to bottom right, #004349, #0d5c63); height: 52px; min-height: 52px;">
+                            <h2 class="font-headline-sm text-headline-sm flex items-center gap-2" style="color: white;">
+                                <span class="material-symbols-outlined" style="color: white;">info</span>Info Jam Pelajaran
+                            </h2>
+                            <div class="w-[88px]"></div>
+                        </div>
+                        <div class="p-5">
+                            <div id="infoJadwalSekarang" class="text-sm">
+                                <p class="text-on-surface-variant">Memuat jadwal...</p>
+                            </div>
                         </div>
                     </div>
                     
@@ -1724,8 +1936,361 @@ async function loadInfoJadwalSekarang() {
 }
 
 // ============================================================
+// PROFIL PENGGUNA
+// ============================================================
+function loadProfilPengguna() {
+    const contentArea = document.getElementById('content-area');
+    
+    // Ambil data user dari session
+    const userData = currentUser || {};
+    const namaUser = userData.nama_lengkap || userData.username || 'Admin Guru';
+    const username = userData.username || 'admin';
+    const level = userData.level || 'Administrator';
+    const inisial = namaUser.charAt(0).toUpperCase();
+    
+    contentArea.innerHTML = `
+        <div>
+            <div class="mb-stack-lg">
+                <h2 class="font-headline-lg text-headline-lg text-on-surface mb-2">Biodata Admin</h2>
+                <p class="font-body-md text-body-md text-on-surface-variant">Kelola informasi profil dan kredensial akun administrator Anda.</p>
+            </div>
+
+            <!-- Grid Layout - Card kiri dibuat lebih lebar (5/12) -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-stack-md">
+
+                <!-- Profile Picture Card (Left Col - Lebih lebar 5/12) -->
+                <div class="md:col-span-5 bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant flex flex-col text-center">
+                    <div class="bg-primary-container rounded-t-xl p-6 flex flex-col items-center text-center">
+                        <div class="relative mb-4 group">
+                            <div class="w-32 h-32 rounded-full bg-primary flex items-center justify-center border-4 border-surface shadow-md">
+                                <span class="text-on-primary font-bold text-headline-lg">${inisial}</span>
+                            </div>
+                            <button onclick="document.getElementById('fotoProfilInput').click()" class="absolute bottom-0 right-0 bg-surface-container-high text-primary w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:bg-surface-container-highest transition-colors">
+                                <span class="material-symbols-outlined text-sm">photo_camera</span>
+                            </button>
+                            <input type="file" id="fotoProfilInput" accept="image/*" class="hidden" onchange="handleFotoProfilUpload(event)">
+                        </div>
+                        <h3 class="font-headline-sm text-headline-sm text-on-primary mb-1">${namaUser}</h3>
+                        <p class="font-label-md text-label-md text-on-primary-container bg-primary/20 px-3 py-1 rounded-full inline-block">${level === 'admin' ? 'Super Admin' : level}</p>
+                    </div>
+                    <div class="p-container-padding flex flex-col items-center">
+                        <div class="w-full space-y-3 text-left mb-stack-md">
+                            <div class="flex justify-between items-center">
+                                <span class="text-on-surface-variant font-label-md">Username</span>
+                                <span class="text-on-surface font-body-md font-bold">${username}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-on-surface-variant font-label-md">Level Akses</span>
+                                <span class="text-on-surface font-body-md">Administrator</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-on-surface-variant font-label-md">Status</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-green-400"></span>
+                                    <span class="text-on-surface font-body-md">Aktif</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-on-surface-variant font-label-md">Instansi</span>
+                                <span class="text-on-surface font-body-md">SMK Negeri 1</span>
+                            </div>
+                        </div>
+                        <div class="w-full border-t border-outline-variant pt-stack-md">
+                            <button onclick="document.getElementById('fotoProfilInput').click()" class="w-full font-label-md py-2 px-4 rounded-lg transition-colors border border-primary flex items-center justify-center gap-2 text-primary hover:bg-primary/5">
+                                <span class="material-symbols-outlined text-sm">upload</span>
+                                Unggah Foto Baru
+                            </button>
+                            <button onclick="loadPage('pengaturan')" class="w-full mt-3 bg-surface-container-lowest hover:bg-surface-container text-primary font-label-md py-2 px-4 rounded-lg transition-colors border flex items-center justify-center gap-2 border-primary">
+                                <span class="material-symbols-outlined text-sm">manage_accounts</span>
+                                Kelola Akun Admin
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Card (Right Col - 7/12) -->
+                <div class="md:col-span-7 bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant">
+                    <div class="flex items-center gap-2 mb-stack-md p-6 bg-primary-container rounded-t-xl text-on-primary">
+                        <span class="material-symbols-outlined">person</span>
+                        <h3 class="font-headline-sm text-headline-sm">Informasi Pribadi</h3>
+                    </div>
+                    <form class="space-y-stack-md px-container-padding pb-container-padding" onsubmit="event.preventDefault(); simpanProfilPengguna();">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-stack-md">
+                            <!-- Full Name -->
+                            <div>
+                                <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="fullName">Nama Lengkap</label>
+                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" id="fullName" type="text" value="${namaUser}">
+                            </div>
+                            <!-- NIP -->
+                            <div>
+                                <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="nip">NIP / ID Pegawai</label>
+                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" id="nip" type="text" value="198001012005011003">
+                            </div>
+                            <!-- Email -->
+                            <div class="md:col-span-2">
+                                <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="email">Alamat Email</label>
+                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" id="email" type="email" value="admin.guru@smkn1.sch.id">
+                            </div>
+                            <!-- Phone -->
+                            <div class="md:col-span-2">
+                                <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="phone">Nomor Telepon</label>
+                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" id="phone" type="tel" value="+62 812 3456 7890">
+                            </div>
+                            <!-- Address -->
+                            <div class="md:col-span-2">
+                                <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="address">Alamat Lengkap</label>
+                                <textarea class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all resize-none" id="address" rows="3">Jl. Pendidikan No. 123, Kota Pelajar, Provinsi Ilmu Pengetahuan</textarea>
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-3 mt-stack-lg pt-stack-md border-t border-outline-variant">
+                            <button class="px-6 py-2 rounded-lg font-label-md text-primary border border-transparent hover:bg-surface-container transition-colors" type="button" onclick="loadProfilPengguna()">
+                                Batal
+                            </button>
+                            <button class="px-6 py-2 rounded-lg font-label-md bg-primary text-on-primary hover:bg-primary-container transition-colors shadow-sm" type="submit">
+                                Simpan Perubahan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    `;
+}
+
+// ============================================================
+// FUNGSI: Handle Upload Foto Profil
+// ============================================================
+function handleFotoProfilUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('Ukuran file maksimal 2MB!', 'error');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            localStorage.setItem('presensiQR_fotoProfil', e.target.result);
+            showToast('Foto profil berhasil diunggah!', 'success');
+            loadProfilPengguna(); // Reload untuk menampilkan foto baru
+        } catch(err) {
+            showToast('Gagal menyimpan foto!', 'error');
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+// ============================================================
+// FUNGSI: Simpan Profil Pengguna
+// ============================================================
+function simpanProfilPengguna() {
+    showLoading('Menyimpan...');
+    setTimeout(() => {
+        // Simpan data sederhana (dalam implementasi nyata, simpan ke database)
+        const profil = {
+            nama_lengkap: document.getElementById('fullName').value,
+            nip: document.getElementById('nip').value,
+            email: document.getElementById('email').value,
+            telepon: document.getElementById('phone').value,
+            alamat: document.getElementById('address').value
+        };
+        
+        try {
+            localStorage.setItem('presensiQR_profilAdmin', JSON.stringify(profil));
+            // Update currentUser
+            if (currentUser) {
+                currentUser.nama_lengkap = profil.nama_lengkap;
+            }
+            hideLoading();
+            showToast('Profil berhasil disimpan!', 'success');
+        } catch(e) {
+            hideLoading();
+            showToast('Gagal menyimpan profil!', 'error');
+        }
+    }, 500);
+}
+
+// ============================================================
+// FUNGSI: Export Jadwal Pelajaran
+// ============================================================
+function exportJadwal() {
+    if (!allJadwalData || allJadwalData.length === 0) {
+        showToast('Tidak ada data jadwal untuk diexport', 'error');
+        return;
+    }
+    
+    let csv = 'No,Kode Mapel,Nama Mata Pelajaran,Kelas,Jurusan,Hari,Jam Mulai,Jam Selesai,Toleransi (Menit)\n';
+    allJadwalData.forEach((j, i) => {
+        csv += `${i + 1},"${j.mapel?.kode_mapel || ''}","${j.mapel?.nama_mata_pelajaran || ''}","${j.kelas || ''}","${j.jurusan || ''}","${j.hari || ''}","${j.jam_mulai?.slice(0, 5) || ''}","${j.jam_selesai?.slice(0, 5) || ''}","${j.toleransi_menit || 15}"\n`;
+    });
+    
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Jadwal_Pelajaran_${formatTanggal(new Date())}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Jadwal Pelajaran diexport!', 'success');
+}
+
+// ============================================================
+// PUSAT UNDUHAN
+// ============================================================
+function loadPusatUnduhan() {
+    const contentArea = document.getElementById('content-area');
+    
+    contentArea.innerHTML = `
+        <div>
+            <header class="mb-stack-lg">
+                <div>
+                    <h1 class="font-headline-lg text-headline-lg text-on-surface mb-2">Pusat Unduhan</h1>
+                    <p class="font-body-lg text-body-lg text-on-surface-variant">Unduh berbagai data dan laporan sistem dalam format file.</p>
+                </div>
+            </header>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+                
+                <!-- Card: Data Siswa -->
+                <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden hover:shadow-md transition-shadow">
+                    <div class="p-container-padding">
+                        <div class="flex items-start gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-primary text-[24px]">person</span>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Data Siswa</h3>
+                                <p class="text-sm text-on-surface-variant">Daftar lengkap siswa beserta NISN, kelas, jurusan, dan informasi lainnya.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-4 border-t border-outline-variant/30">
+                            <span class="text-xs text-on-surface-variant">Format: CSV / Excel</span>
+                            <button onclick="exportSiswa()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm text-sm">
+                                <span class="material-symbols-outlined text-[18px]">download</span>Unduh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card: Mata Pelajaran -->
+                <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden hover:shadow-md transition-shadow">
+                    <div class="p-container-padding">
+                        <div class="flex items-start gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-secondary text-[24px]">book</span>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Mata Pelajaran</h3>
+                                <p class="text-sm text-on-surface-variant">Daftar mata pelajaran lengkap dengan kode, guru pengampu, dan kelas.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-4 border-t border-outline-variant/30">
+                            <span class="text-xs text-on-surface-variant">Format: CSV / Excel</span>
+                            <button onclick="exportMapel()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm text-sm">
+                                <span class="material-symbols-outlined text-[18px]">download</span>Unduh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card: Jadwal Pelajaran -->
+                <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden hover:shadow-md transition-shadow">
+                    <div class="p-container-padding">
+                        <div class="flex items-start gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-xl bg-tertiary/10 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-tertiary text-[24px]">calendar_month</span>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Jadwal Pelajaran</h3>
+                                <p class="text-sm text-on-surface-variant">Jadwal lengkap pelajaran per kelas, hari, dan jam pelajaran.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-4 border-t border-outline-variant/30">
+                            <span class="text-xs text-on-surface-variant">Format: CSV / Excel</span>
+                            <button onclick="exportJadwal()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm text-sm">
+                                <span class="material-symbols-outlined text-[18px]">download</span>Unduh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card: Rekap Presensi -->
+                <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden hover:shadow-md transition-shadow">
+                    <div class="p-container-padding">
+                        <div class="flex items-start gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-green-600 text-[24px]">assessment</span>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Rekap Presensi</h3>
+                                <p class="text-sm text-on-surface-variant">Laporan rekapitulasi kehadiran siswa per mata pelajaran dan kelas.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-4 border-t border-outline-variant/30">
+                            <span class="text-xs text-on-surface-variant">Format: CSV / Excel</span>
+                            <button onclick="exportRekapExcel()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm text-sm">
+                                <span class="material-symbols-outlined text-[18px]">download</span>Unduh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card: Kartu Presensi Siswa -->
+                <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden hover:shadow-md transition-shadow">
+                    <div class="p-container-padding">
+                        <div class="flex items-start gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-amber-600 text-[24px]">badge</span>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Kartu Presensi Siswa</h3>
+                                <p class="text-sm text-on-surface-variant">Kumpulan kartu identitas siswa dengan QR code untuk presensi.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-4 border-t border-outline-variant/30">
+                            <span class="text-xs text-on-surface-variant">Format: ZIP / PDF</span>
+                            <button onclick="downloadZipKartu()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm text-sm">
+                                <span class="material-symbols-outlined text-[18px]">download</span>Unduh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card: Kredensial Akun Siswa -->
+                <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden hover:shadow-md transition-shadow">
+                    <div class="p-container-padding">
+                        <div class="flex items-start gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-blue-600 text-[24px]">vpn_key</span>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Kredensial Akun Siswa</h3>
+                                <p class="text-sm text-on-surface-variant">Daftar username dan password akun siswa untuk login ke sistem.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-4 border-t border-outline-variant/30">
+                            <span class="text-xs text-on-surface-variant">Format: Excel</span>
+                            <button onclick="downloadKredensial()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm text-sm">
+                                <span class="material-symbols-outlined text-[18px]">download</span>Unduh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    `;
+}
+
+// ============================================================
 // REKAP ABSENSI
 // ============================================================
+
+let rekapPage = 1;
+const rekapPerPage = 10;
 
 async function loadRekapAbsen() {
     const contentArea = document.getElementById('content-area');
@@ -1741,19 +2306,37 @@ async function loadRekapAbsen() {
     
     contentArea.innerHTML = `
         <div>
-            <header class="mb-stack-lg border-b border-outline-variant pb-stack-sm flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <header class="mb-stack-lg pb-stack-sm">
                 <div>
                     <h1 class="font-headline-lg text-headline-lg text-on-surface mb-2">Rekap & Penilaian Absensi</h1>
                     <p class="font-body-lg text-body-lg text-on-surface-variant">Pantau rekapitulasi kehadiran dan nilai absensi per mata pelajaran & kelas.</p>
                 </div>
-                <div class="flex gap-3 shrink-0">
-                    <button onclick="exportRekapExcel()" class="px-4 py-2 bg-surface-container-lowest border border-outline-variant text-primary rounded-lg flex items-center gap-2 hover:bg-surface-container-highest shadow-sm">
-                        <span class="material-symbols-outlined text-[18px]">table_view</span>Export Excel
-                    </button>
-                </div>
             </header>
             
-            <div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/30 mb-stack-md flex flex-col md:flex-row gap-4 items-end">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-gutter mb-stack-md">
+                <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-20 h-20 bg-green-500/10 rounded-bl-full -mr-4 -mt-4"></div>
+                    <p class="font-label-md text-on-surface-variant uppercase tracking-wide text-xs mb-2">Rata-rata Hadir</p>
+                    <p class="text-3xl font-bold text-on-surface tracking-tighter" id="statRataHadir">-%</p>
+                </div>
+                <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 rounded-bl-full -mr-4 -mt-4"></div>
+                    <p class="font-label-md text-on-surface-variant uppercase tracking-wide text-xs mb-2">Rata-rata Terlambat</p>
+                    <p class="text-3xl font-bold text-on-surface tracking-tighter" id="statRataTerlambat">-%</p>
+                </div>
+                <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-bl-full -mr-4 -mt-4"></div>
+                    <p class="font-label-md text-on-surface-variant uppercase tracking-wide text-xs mb-2">Total Sakit/Izin</p>
+                    <p class="text-3xl font-bold text-on-surface tracking-tighter" id="statTotalSakit">-</p>
+                </div>
+                <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-20 h-20 bg-error/10 rounded-bl-full -mr-4 -mt-4"></div>
+                    <p class="font-label-md text-on-surface-variant uppercase tracking-wide text-xs mb-2">Total Alpa</p>
+                    <p class="text-3xl font-bold text-on-surface tracking-tighter" id="statTotalAlpa">-</p>
+                </div>
+            </div>
+            
+            <div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/30 mb-stack-lg flex flex-col md:flex-row gap-4 items-end">
                 <div class="w-full md:w-64">
                     <label class="block mb-2 font-label-md text-on-surface-variant uppercase tracking-wider text-xs">Mata Pelajaran</label>
                     <select id="filterMapelRekap" onchange="loadRekapData()" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5">
@@ -1780,39 +2363,16 @@ async function loadRekapAbsen() {
                         <option value="11">November</option><option value="12">Desember</option>
                     </select>
                 </div>
-                <button onclick="loadRekapData()" class="px-5 py-2.5 bg-secondary text-on-secondary rounded-lg hover:bg-secondary/90 shadow-sm flex items-center gap-2 w-full md:w-auto justify-center">
-                    <span class="material-symbols-outlined text-[18px]">filter_alt</span>Terapkan
+                <button onclick="exportRekapExcel()" class="px-5 py-2.5 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm flex items-center gap-2 w-full md:w-auto justify-center">
+                    <span class="material-symbols-outlined text-[18px]">table_view</span>Export Excel
                 </button>
-            </div>
-            
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-gutter mb-stack-lg">
-                <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-20 h-20 bg-green-500/10 rounded-bl-full -mr-4 -mt-4"></div>
-                    <p class="font-label-md text-on-surface-variant uppercase tracking-wide text-xs mb-2">Rata-rata Hadir</p>
-                    <p class="text-3xl font-bold text-on-surface tracking-tighter" id="statRataHadir">-%</p>
-                </div>
-                <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 rounded-bl-full -mr-4 -mt-4"></div>
-                    <p class="font-label-md text-on-surface-variant uppercase tracking-wide text-xs mb-2">Rata-rata Terlambat</p>
-                    <p class="text-3xl font-bold text-on-surface tracking-tighter" id="statRataTerlambat">-%</p>
-                </div>
-                <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-bl-full -mr-4 -mt-4"></div>
-                    <p class="font-label-md text-on-surface-variant uppercase tracking-wide text-xs mb-2">Total Sakit/Izin</p>
-                    <p class="text-3xl font-bold text-on-surface tracking-tighter" id="statTotalSakit">-</p>
-                </div>
-                <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-20 h-20 bg-error/10 rounded-bl-full -mr-4 -mt-4"></div>
-                    <p class="font-label-md text-on-surface-variant uppercase tracking-wide text-xs mb-2">Total Alpa</p>
-                    <p class="text-3xl font-bold text-on-surface tracking-tighter" id="statTotalAlpa">-</p>
-                </div>
             </div>
             
             <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container-highest overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="bg-[#F1F3F4] text-on-surface-variant text-label-md uppercase tracking-wider border-b">
+                            <tr class="text-label-md uppercase tracking-wider border-b" style="background: linear-gradient(to bottom right, #004349, #0d5c63); color: white;">
                                 <th class="p-4 w-16 text-center">No</th>
                                 <th class="p-4">Nama Siswa</th>
                                 <th class="p-4">Kelas</th>
@@ -1832,6 +2392,7 @@ async function loadRekapAbsen() {
                 </div>
                 <div class="flex justify-between items-center p-4 bg-surface border-t">
                     <span class="text-body-md text-sm text-on-surface-variant" id="paginationRekap">Menampilkan 0 data</span>
+                    <div class="flex gap-1" id="paginationButtonsRekap"></div>
                 </div>
             </div>
         </div>
@@ -1901,8 +2462,13 @@ async function loadRekapData() {
         const tbody = document.getElementById('tableRekap');
         if (rekapArray.length === 0) {
             tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-on-surface-variant">Tidak ada data rekap.</td></tr>';
+            document.getElementById('paginationRekap').textContent = 'Menampilkan 0 data';
+            document.getElementById('paginationButtonsRekap').innerHTML = '';
         } else {
-            tbody.innerHTML = rekapArray.map((r, i) => {
+            const start = (rekapPage - 1) * rekapPerPage;
+            const pageData = rekapArray.slice(start, start + rekapPerPage);
+            
+            tbody.innerHTML = pageData.map((r, i) => {
                 const total = r.hadir + r.terlambat + r.sakit + r.izin + r.alpa || 1;
                 const persentase = Math.round(((r.hadir + r.terlambat) / total) * 100);
                 const nilai = Math.max(0, 100 - (r.alpa * 5) - (r.terlambat * 2));
@@ -1927,9 +2493,28 @@ async function loadRekapData() {
                     <td class="p-4 text-center font-bold ${nilaiColor} text-lg">${nilai}</td>
                 </tr>`;
             }).join('');
+            
+            // Update info pagination
+            document.getElementById('paginationRekap').textContent = `Menampilkan ${start + 1}-${Math.min(start + rekapPerPage, rekapArray.length)} dari ${rekapArray.length} data`;
+            
+            // Generate tombol halaman
+            const totalPages = Math.ceil(rekapArray.length / rekapPerPage);
+            let buttonsHtml = '';
+            
+            // Tombol Previous
+            buttonsHtml += `<button onclick="rekapPage=${Math.max(1, rekapPage - 1)};loadRekapData()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${rekapPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${rekapPage === 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>`;
+            
+            // Nomor halaman
+            for (let i = 1; i <= totalPages; i++) {
+                buttonsHtml += `<button onclick="rekapPage=${i};loadRekapData()" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${i === rekapPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${i}</button>`;
+            }
+            
+            // Tombol Next
+            buttonsHtml += `<button onclick="rekapPage=${Math.min(totalPages, rekapPage + 1)};loadRekapData()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${rekapPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" ${rekapPage === totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>`;
+            
+            document.getElementById('paginationButtonsRekap').innerHTML = buttonsHtml;
         }
         
-        document.getElementById('paginationRekap').textContent = `Menampilkan ${rekapArray.length} data`;
         hideLoading();
         
     } catch (e) {
@@ -1982,28 +2567,31 @@ async function loadPengaturan() {
     
     contentArea.innerHTML = `
         <div>
-            <header class="mb-stack-lg border-b border-outline-variant pb-stack-sm">
+            <header class="mb-stack-lg pb-stack-sm">
                 <h1 class="font-headline-lg text-headline-lg text-on-surface mb-2">Pengaturan Sistem</h1>
                 <p class="font-body-lg text-body-lg text-on-surface-variant">Konfigurasi parameter sistem absensi dan pengaturan akun pengguna.</p>
             </header>
             
-            <!-- TAB MENU: WARNA HIJAU GRADIEN, LEBAR MAX-W-3XL SAMA DENGAN CARD -->
-            <div class="flex gap-1 mb-stack-lg p-1 rounded-xl w-full max-w-3xl" 
+            <!-- TAB MENU: WARNA HIJAU GRADIEN, DIPERLEBAR, TEKS SEMBUNYI DI MOBILE -->
+            <div class="flex gap-1 mb-stack-lg p-1 rounded-xl w-full max-w-4xl" 
                  style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
-                <button onclick="switchTab('tabSekolah')" class="tab-btn active flex-1 px-4 py-2 rounded-lg font-label-md transition-all bg-white shadow-sm" data-tab="tabSekolah" style="color: #004349;">
-                    <span class="material-symbols-outlined text-[18px] align-middle mr-1">school</span>Profil Sekolah
+                <button onclick="switchTab('tabSekolah')" class="tab-btn active flex-1 px-2 sm:px-4 py-2 rounded-lg font-label-md transition-all bg-white shadow-sm whitespace-nowrap" data-tab="tabSekolah" style="color: #004349;">
+                    <span class="material-symbols-outlined text-[18px] align-middle sm:mr-1">school</span><span class="hidden sm:inline">Profil Sekolah</span>
                 </button>
-                <button onclick="switchTab('tabAbsensi')" class="tab-btn flex-1 px-4 py-2 rounded-lg font-label-md transition-all" data-tab="tabAbsensi" style="color: white;">
-                    <span class="material-symbols-outlined text-[18px] align-middle mr-1">schedule</span>Jam Absensi
+                <button onclick="switchTab('tabAbsensi')" class="tab-btn flex-1 px-2 sm:px-4 py-2 rounded-lg font-label-md transition-all whitespace-nowrap" data-tab="tabAbsensi" style="color: white;">
+                    <span class="material-symbols-outlined text-[18px] align-middle sm:mr-1">schedule</span><span class="hidden sm:inline">Jam Absensi</span>
                 </button>
-                <button onclick="switchTab('tabAkun')" class="tab-btn flex-1 px-4 py-2 rounded-lg font-label-md transition-all" data-tab="tabAkun" style="color: white;">
-                    <span class="material-symbols-outlined text-[18px] align-middle mr-1">manage_accounts</span>Akun
+                <button onclick="switchTab('tabAkun')" class="tab-btn flex-1 px-2 sm:px-4 py-2 rounded-lg font-label-md transition-all whitespace-nowrap" data-tab="tabAkun" style="color: white;">
+                    <span class="material-symbols-outlined text-[18px] align-middle sm:mr-1">manage_accounts</span><span class="hidden sm:inline">Akun</span>
+                </button>
+                <button onclick="switchTab('tabSistem')" class="tab-btn flex-1 px-2 sm:px-4 py-2 rounded-lg font-label-md transition-all whitespace-nowrap" data-tab="tabSistem" style="color: white;">
+                    <span class="material-symbols-outlined text-[18px] align-middle sm:mr-1">tune</span><span class="hidden sm:inline">Konfigurasi Sistem</span>
                 </button>
             </div>
             
             <div id="tabSekolah" class="tab-content active">
                 <!-- CARD IDENTITAS SEKOLAH DENGAN HEADER HIJAU -->
-                <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden max-w-3xl">
+                <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden max-w-4xl">
                     <!-- HEADER CARD: WARNA HIJAU GRADIEN, ICON & TULISAN PUTIH -->
                     <div class="px-container-padding py-3 flex items-center gap-2" 
                          style="background: linear-gradient(to bottom right, #004349, #0d5c63); min-height: 52px;">
@@ -2012,6 +2600,23 @@ async function loadPengaturan() {
                     </div>
                     <!-- BODY CARD -->
                     <div class="p-container-padding">
+                        <!-- UPLOAD LOGO SEKOLAH -->
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-stack-md pb-stack-md border-b border-surface-variant mb-5">
+                            <div id="logoPreviewContainer" class="w-20 h-20 rounded-full border-2 border-dashed border-outline-variant bg-surface-container flex items-center justify-center overflow-hidden shrink-0 group relative cursor-pointer hover:border-primary transition-colors" onclick="document.getElementById('logoSekolahInput').click()">
+                                <span id="logoPlaceholderIcon" class="material-symbols-outlined text-outline group-hover:text-primary transition-colors z-10">add_photo_alternate</span>
+                                <img id="logoPreviewImg" class="w-full h-full object-cover hidden absolute inset-0" alt="Logo Sekolah">
+                                <div class="absolute inset-0 bg-black/5 group-hover:bg-primary/5 transition-colors"></div>
+                            </div>
+                            <input type="file" id="logoSekolahInput" accept="image/jpeg,image/png,image/svg+xml" class="hidden" onchange="handleLogoUpload(event)">
+                            <div>
+                                <h4 class="font-label-md text-label-md text-on-surface mb-1">Logo Sekolah</h4>
+                                <p class="font-body-md text-body-md text-on-surface-variant text-xs mb-3">Format JPG, PNG, atau SVG. Maksimal 2MB. Rasio 1:1 direkomendasikan.</p>
+                                <button type="button" onclick="document.getElementById('logoSekolahInput').click()" class="bg-surface-container border border-outline-variant text-on-surface py-1.5 px-4 rounded-lg font-label-md text-label-md hover:bg-surface-container-highest transition-colors inline-flex items-center gap-2 text-xs">
+                                    <span class="material-symbols-outlined text-[16px]">upload</span> Unggah File
+                                </button>
+                            </div>
+                        </div>
+                        
                         <form id="formSekolah" onsubmit="event.preventDefault(); simpanPengaturanSekolah();" class="space-y-5">
                             <div><label class="block mb-2 font-label-md">Nama Sekolah</label>
                                 <input type="text" id="namaSekolah" value="${pengaturan.Nama_Sekolah || ''}" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5"></div>
@@ -2039,7 +2644,7 @@ async function loadPengaturan() {
             
             <div id="tabAbsensi" class="tab-content">
                 <!-- CARD PENGATURAN JAM & HARI KERJA DENGAN HEADER HIJAU -->
-                <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden max-w-3xl">
+                <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden max-w-4xl">
                     <!-- HEADER CARD: WARNA HIJAU GRADIEN, ICON & TULISAN PUTIH -->
                     <div class="px-container-padding py-3 flex items-center gap-2" 
                          style="background: linear-gradient(to bottom right, #004349, #0d5c63); min-height: 52px;">
@@ -2080,7 +2685,7 @@ async function loadPengaturan() {
             
             <div id="tabAkun" class="tab-content">
                 <!-- CARD KEAMANAN AKUN DENGAN HEADER HIJAU -->
-                <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden max-w-3xl">
+                <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden max-w-4xl">
                     <!-- HEADER CARD: WARNA HIJAU GRADIEN, ICON & TULISAN PUTIH -->
                     <div class="px-container-padding py-3 flex items-center gap-2" 
                          style="background: linear-gradient(to bottom right, #004349, #0d5c63); min-height: 52px;">
@@ -2110,6 +2715,53 @@ async function loadPengaturan() {
                     </div>
                 </div>
             </div>
+            
+            <!-- TAB BARU: KONFIGURASI SISTEM -->
+            <div id="tabSistem" class="tab-content">
+                <!-- CARD KONFIGURASI SISTEM DENGAN HEADER HIJAU -->
+                <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden max-w-4xl">
+                    <div class="px-container-padding py-3 flex items-center gap-2" 
+                         style="background: linear-gradient(to bottom right, #004349, #0d5c63); min-height: 52px;">
+                        <span class="material-symbols-outlined" style="color: white;">tune</span>
+                        <h2 class="font-headline-sm text-headline-sm" style="color: white;">Konfigurasi Sistem</h2>
+                    </div>
+                    <div class="p-container-padding">
+                        <p class="text-sm text-on-surface-variant mb-5">Pengaturan fitur untuk sisi siswa</p>
+                        
+                        <form id="formSistem" onsubmit="event.preventDefault(); simpanPengaturanSistem();" class="space-y-4">
+                            
+                            <!-- TOGGLE 1: Hide/Unhide Scanner -->
+                            <div class="flex items-center justify-between p-4 bg-surface-container-low rounded-lg">
+                                <div class="flex-1 pr-4">
+                                    <p class="font-medium text-on-surface">Hide/Unhide Scanner</p>
+                                    <p class="text-xs text-on-surface-variant mt-0.5">Mengaktifkan atau menonaktifkan menu Scanner di dashboard siswa</p>
+                                </div>
+                                <label class="toggle-switch shrink-0">
+                                    <input type="checkbox" id="siswaScannerAktif" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            
+                            <!-- TOGGLE 2: Aktif/Nonaktif Tampilan -->
+                            <div class="flex items-center justify-between p-4 bg-surface-container-low rounded-lg">
+                                <div class="flex-1 pr-4">
+                                    <p class="font-medium text-on-surface">Aktif/Nonaktif Tampilan</p>
+                                    <p class="text-xs text-on-surface-variant mt-0.5">Mengaktifkan atau menonaktifkan ikon mode tampilan (Dark/Light) di sisi siswa</p>
+                                </div>
+                                <label class="toggle-switch shrink-0">
+                                    <input type="checkbox" id="siswaModeTampilanAktif" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="flex justify-end gap-3 pt-4">
+                                <button type="button" onclick="loadPengaturan()" class="px-5 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest">Reset</button>
+                                <button type="submit" class="px-5 py-2 rounded-lg bg-primary text-on-primary hover:opacity-90 shadow-sm">Simpan Pengaturan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     `;
 }
@@ -2127,6 +2779,65 @@ function switchTab(tabId) {
         activeBtn.classList.add('active', 'bg-white', 'shadow-sm');
         activeBtn.style.color = '#004349'; // Tab aktif: tulisan hijau primary
     }
+}
+
+// ============================================================
+// FUNGSI: Handle Upload Logo Sekolah
+// ============================================================
+function handleLogoUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validasi ukuran file (maks 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('Ukuran file maksimal 2MB!', 'error');
+        return;
+    }
+    
+    // Validasi tipe file
+    if (!['image/jpeg', 'image/png', 'image/svg+xml'].includes(file.type)) {
+        showToast('Format file harus JPG, PNG, atau SVG!', 'error');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const logoData = e.target.result;
+        
+        // Tampilkan preview
+        document.getElementById('logoPreviewImg').src = logoData;
+        document.getElementById('logoPreviewImg').classList.remove('hidden');
+        document.getElementById('logoPlaceholderIcon').classList.add('hidden');
+        
+        // Simpan ke localStorage
+        try {
+            localStorage.setItem('presensiQR_logoSekolah', logoData);
+            showToast('Logo berhasil diunggah!', 'success');
+        } catch(e) {
+            showToast('Gagal menyimpan logo!', 'error');
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+// ============================================================
+// FUNGSI: Load Logo Sekolah saat halaman dimuat
+// ============================================================
+function loadLogoSekolah() {
+    try {
+        const logoData = localStorage.getItem('presensiQR_logoSekolah');
+        if (logoData) {
+            setTimeout(() => {
+                const previewImg = document.getElementById('logoPreviewImg');
+                const placeholderIcon = document.getElementById('logoPlaceholderIcon');
+                if (previewImg && placeholderIcon) {
+                    previewImg.src = logoData;
+                    previewImg.classList.remove('hidden');
+                    placeholderIcon.classList.add('hidden');
+                }
+            }, 100);
+        }
+    } catch(e) {}
 }
 
 async function simpanPengaturanSekolah() {
@@ -2172,6 +2883,31 @@ async function simpanPengaturanAbsensi() {
         
         hideLoading();
         showToast('Pengaturan absensi disimpan!', 'success');
+    } catch (e) {
+        hideLoading();
+        showToast('Gagal: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// FUNGSI: Simpan Pengaturan Sistem
+// ============================================================
+async function simpanPengaturanSistem() {
+    showLoading('Menyimpan...');
+    try {
+        const sb = getSupabase();
+        
+        const data = [
+            { pengaturan: 'Siswa_Scanner_Aktif', nilai: document.getElementById('siswaScannerAktif').checked ? 'true' : 'false' },
+            { pengaturan: 'Siswa_Mode_Tampilan_Aktif', nilai: document.getElementById('siswaModeTampilanAktif').checked ? 'true' : 'false' }
+        ];
+        
+        for (const item of data) {
+            await sb.from('pengaturan_sistem').upsert(item, { onConflict: 'pengaturan' });
+        }
+        
+        hideLoading();
+        showToast('Pengaturan sistem disimpan!', 'success');
     } catch (e) {
         hideLoading();
         showToast('Gagal: ' + e.message, 'error');
