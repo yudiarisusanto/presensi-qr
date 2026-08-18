@@ -508,10 +508,7 @@ async function loadMasterSiswa() {
                         <option value="RPL 2">RPL 2</option>
                         <option value="MM 1">MM 1</option>
                     </select>
-                    <button onclick="exportSiswa()" class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant text-primary rounded-lg hover:bg-surface-container-low shadow-sm whitespace-nowrap">
-                        <span class="material-symbols-outlined text-[18px]">download</span>Export
-                    </button>
-                    <button onclick="showModalSiswa()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm whitespace-nowrap">
+                    <button onclick="showModalSiswa()" class="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm flex-1 md:flex-none w-full md:w-auto">
                         <span class="material-symbols-outlined text-[18px]">add</span>Tambah Siswa
                     </button>
                 </div>
@@ -804,10 +801,7 @@ async function loadMasterMapel() {
                         <option value="11">Kelas 11</option>
                         <option value="12">Kelas 12</option>
                     </select>
-                    <button onclick="exportMapel()" class="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant text-primary rounded-lg hover:bg-surface-container-low shadow-sm whitespace-nowrap">
-                        <span class="material-symbols-outlined text-[18px]">download</span>Export
-                    </button>
-                    <button onclick="showModalMapel()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm whitespace-nowrap">
+                    <button onclick="showModalMapel()" class="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm flex-1 md:flex-none w-full md:w-auto">
                         <span class="material-symbols-outlined text-[18px]">add</span>Tambah Mapel
                     </button>
                 </div>
@@ -1053,6 +1047,11 @@ async function loadMasterJadwal() {
             </div>
             
             <div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-surface-container-highest mb-stack-md flex flex-col md:flex-row gap-4 items-center">
+                <div class="relative w-full md:w-64 mb-2 md:mb-0">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+                    <input type="text" id="searchJadwal" placeholder="Cari mata pelajaran..." oninput="filterJadwal()"
+                        class="w-full pl-10 pr-4 py-2 bg-surface border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container">
+                </div>
                 <div class="flex gap-2 w-full md:w-auto flex-wrap justify-center md:justify-start">
                     <select id="filterJadwalKelas" onchange="jadwalPage=1;filterJadwal()" class="w-full md:w-40 px-4 py-2 bg-surface border border-outline-variant rounded-lg">
                         <option value="">Semua Kelas</option>
@@ -1069,7 +1068,7 @@ async function loadMasterJadwal() {
                         <option value="Jumat">Jumat</option>
                         <option value="Sabtu">Sabtu</option>
                     </select>
-                    <button onclick="showModalJadwal()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm whitespace-nowrap">
+                    <button onclick="showModalJadwal()" class="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm flex-1 md:flex-none w-full md:w-auto">
                         <span class="material-symbols-outlined text-[18px]">add</span>Tambah Jadwal
                     </button>
                 </div>
@@ -1184,13 +1183,21 @@ async function loadAllJadwal() {
 }
 
 function filterJadwal() {
+    const search = document.getElementById('searchJadwal')?.value.toLowerCase() || '';
     const kelas = document.getElementById('filterJadwalKelas')?.value || '';
     const hari = document.getElementById('filterJadwalHari')?.value || '';
     
     let filtered = allJadwalData.filter(j => {
-        return (!kelas || j.kelas === kelas) && (!hari || j.hari === hari);
+        const matchSearch = !search || 
+            (j.mapel?.nama_mata_pelajaran || '').toLowerCase().includes(search) ||
+            (j.mapel?.kode_mapel || '').toLowerCase().includes(search) ||
+            (j.jurusan || '').toLowerCase().includes(search);
+        const matchKelas = !kelas || j.kelas === kelas;
+        const matchHari = !hari || j.hari === hari;
+        return matchSearch && matchKelas && matchHari;
     });
     
+    jadwalPage = 1; // Reset ke halaman 1 saat filter berubah
     renderJadwalTable(filtered);
 }
 
@@ -1454,15 +1461,26 @@ async function loadQRGenerator() {
                 
                 <section class="lg:col-span-12 mt-4">
                     <div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-surface-container-highest mb-stack-md flex flex-col md:flex-row gap-4 items-center">
-                        <div class="relative w-full md:w-96">
+                        <div class="relative w-full md:w-64">
                             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
                             <input type="text" id="searchSiswaQR" placeholder="Cari nama atau NISN..." oninput="filterSiswaQR()"
                                 class="w-full pl-10 pr-4 py-2 bg-surface border border-outline-variant rounded-lg focus:outline-none focus:border-primary">
                         </div>
+                        <select id="filterQRKelas" onchange="filterSiswaQR()" class="w-full md:w-40 px-4 py-2 bg-surface border border-outline-variant rounded-lg">
+                            <option value="">Semua Kelas</option>
+                            <option value="X">Kelas X</option>
+                            <option value="XI">Kelas XI</option>
+                            <option value="XII">Kelas XII</option>
+                        </select>
+                        <select id="filterQRJurusan" onchange="filterSiswaQR()" class="w-full md:w-40 px-4 py-2 bg-surface border border-outline-variant rounded-lg">
+                            <option value="">Semua Jurusan</option>
+                            <option value="TKJ 1">TKJ 1</option>
+                            <option value="TKJ 2">TKJ 2</option>
+                            <option value="RPL 1">RPL 1</option>
+                            <option value="RPL 2">RPL 2</option>
+                            <option value="MM 1">MM 1</option>
+                        </select>
                         <div class="flex gap-2 w-full md:w-auto">
-                            <button onclick="downloadZipKartu()" class="flex-1 sm:flex-none py-2 px-4 bg-surface-container-lowest border border-primary text-primary rounded-lg flex items-center justify-center gap-2 hover:bg-surface-container-highest whitespace-nowrap">
-                                <span class="material-symbols-outlined text-[18px]">download</span>Download ZIP
-                            </button>
                             <button onclick="generateTerpilih()" class="flex-1 sm:flex-none py-2 px-4 bg-primary text-on-primary rounded-lg flex items-center justify-center gap-2 hover:opacity-90 shadow-sm whitespace-nowrap">
                                 <span class="material-symbols-outlined text-[18px]">print</span>Generate Terpilih
                             </button>
@@ -1617,10 +1635,10 @@ function renderQRTable(data) {
             <td class="p-3">${s.kelas} ${s.jurusan}</td>
             <td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${statusWarna}">${s.status_akun}</span></td>
             <td class="p-3 text-center">
-                <button onclick="previewKartuSiswa('${s.nama_lengkap}', '${s.nisn}', '${s.kelas} ${s.jurusan}')" class="p-1.5 text-primary hover:bg-primary/10 rounded" title="Preview">
-                    <span class="material-symbols-outlined text-[18px]">visibility</span>
+                <button onclick="editStatusAkunSiswa(${s.id}, '${s.nama_lengkap.replace("'", "\'")}', '${s.status_akun}')" class="p-1.5 text-primary hover:bg-primary/10 rounded" title="Edit Status Akun">
+                    <span class="material-symbols-outlined text-[18px]">edit</span>
                 </button>
-                <button onclick="generateKartuIndividu('${s.nama_lengkap}', '${s.nisn}', '${s.kelas} ${s.jurusan}')" class="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Download">
+                <button onclick="generateKartuIndividu('${s.nama_lengkap}', '${s.nisn}', '${s.kelas} ${s.jurusan}')" class="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Download Kartu">
                     <span class="material-symbols-outlined text-[18px]">download</span>
                 </button>
             </td>
@@ -1655,31 +1673,157 @@ function toggleCheckAll() {
 
 function filterSiswaQR() {
     const search = document.getElementById('searchSiswaQR')?.value.toLowerCase() || '';
+    const filterKelas = document.getElementById('filterQRKelas')?.value || '';
+    const filterJurusan = document.getElementById('filterQRJurusan')?.value || '';
     qrPage = 1; // Reset ke halaman 1 saat filter berubah
     
-    if (!search) {
+    if (!search && !filterKelas && !filterJurusan) {
         window.currentQRFiltered = null;
         renderQRTable(allQRData);
         return;
     }
     
-    window.currentQRFiltered = allQRData.filter(s => 
-        s.nama_lengkap?.toLowerCase().includes(search) || 
-        s.nisn?.toLowerCase().includes(search) ||
-        s.kelas?.toLowerCase().includes(search) ||
-        s.jurusan?.toLowerCase().includes(search)
-    );
+    window.currentQRFiltered = allQRData.filter(s => {
+        const matchSearch = !search || 
+            s.nama_lengkap?.toLowerCase().includes(search) || 
+            s.nisn?.toLowerCase().includes(search);
+        const matchKelas = !filterKelas || s.kelas === filterKelas;
+        const matchJurusan = !filterJurusan || s.jurusan === filterJurusan;
+        return matchSearch && matchKelas && matchJurusan;
+    });
     
     renderQRTable(window.currentQRFiltered);
 }
 
+// ============================================================
+// FUNGSI: Edit Status Akun Siswa (Popup Modal)
+// ============================================================
+function editStatusAkunSiswa(id, nama, statusAkun) {
+    // Buat modal secara dinamis
+    const modalHtml = `
+        <div id="modalEditStatus" class="fixed inset-0 z-[9998] flex items-center justify-center">
+            <div class="modal-overlay absolute inset-0 bg-black/50" onclick="closeModalEditStatus()"></div>
+            <div class="relative bg-surface-container-lowest rounded-xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
+                <div class="p-6 border-b flex items-center justify-between" style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
+                    <h3 class="font-headline-sm text-white">Edit Status Akun</h3>
+                    <button onclick="closeModalEditStatus()" class="p-2 rounded-lg hover:bg-white/10">
+                        <span class="material-symbols-outlined text-white">close</span>
+                    </button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="block mb-2 font-label-md text-on-surface-variant">Nama Siswa</label>
+                        <input type="text" value="${nama}" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5 text-on-surface font-semibold" readonly>
+                    </div>
+                    <div>
+                        <label class="block mb-2 font-label-md text-on-surface-variant">Status Akun</label>
+                        <select id="editStatusAkun" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none">
+                            <option value="Belum Generate" ${statusAkun === 'Belum Generate' ? 'selected' : ''}>Belum Generate</option>
+                            <option value="Aktif" ${statusAkun === 'Aktif' ? 'selected' : ''}>Aktif</option>
+                        </select>
+                    </div>
+                    <p class="text-xs text-on-surface-variant bg-amber-50 border border-amber-200 rounded-lg p-3">
+                        <span class="material-symbols-outlined text-amber-600 text-sm align-middle">warning</span>
+                        Mengubah menjadi "Aktif" akan otomatis membuat akun user dengan username = NISN dan password = tanggal lahir.
+                    </p>
+                </div>
+                <div class="p-6 border-t flex justify-end gap-3 bg-surface-container-low">
+                    <button onclick="closeModalEditStatus()" class="px-5 py-2 rounded-lg font-label-md text-on-surface-variant hover:bg-surface-container-highest">Batal</button>
+                    <button onclick="simpanStatusAkun(${id})" class="px-5 py-2 rounded-lg font-label-md bg-primary text-on-primary hover:opacity-90 shadow-sm">Simpan</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Hapus modal lama jika ada
+    const oldModal = document.getElementById('modalEditStatus');
+    if (oldModal) oldModal.remove();
+    
+    // Tambahkan modal ke body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function closeModalEditStatus() {
+    const modal = document.getElementById('modalEditStatus');
+    if (modal) modal.remove();
+}
+
+async function simpanStatusAkun(siswaId) {
+    const statusBaru = document.getElementById('editStatusAkun').value;
+    const siswa = allQRData.find(s => s.id === siswaId);
+    if (!siswa) return;
+    
+    showLoading('Menyimpan...');
+    
+    try {
+        const sb = getSupabase();
+        
+        if (statusBaru === 'Aktif' && siswa.status_akun !== 'Aktif') {
+            // Buat akun user baru
+            let password = '123456';
+            if (siswa.tanggal_lahir) {
+                const tgl = new Date(siswa.tanggal_lahir);
+                password = String(tgl.getDate()).padStart(2, '0') + 
+                           String(tgl.getMonth() + 1).padStart(2, '0') + 
+                           String(tgl.getFullYear()).slice(-2);
+            }
+            
+            // Cek apakah user sudah ada
+            const { data: existingUser } = await sb.from('users').select('*').eq('username', siswa.nisn).maybeSingle();
+            
+            if (!existingUser) {
+                await sb.from('users').insert({
+                    username: siswa.nisn,
+                    password: password,
+                    level: 'siswa',
+                    status: 'Aktif',
+                    siswa_id: siswaId
+                });
+            } else {
+                // Update status user yang sudah ada
+                await sb.from('users').update({ status: 'Aktif' }).eq('id', existingUser.id);
+            }
+            
+            // Update status siswa
+            await sb.from('siswa').update({ status_akun: 'Aktif' }).eq('id', siswaId);
+            
+        } else if (statusBaru === 'Belum Generate' && siswa.status_akun === 'Aktif') {
+            // Nonaktifkan akun user
+            await sb.from('users').update({ status: 'Tidak Aktif' }).eq('siswa_id', siswaId);
+            
+            // Update status siswa
+            await sb.from('siswa').update({ status_akun: 'Belum Generate' }).eq('id', siswaId);
+        }
+        
+        hideLoading();
+        closeModalEditStatus();
+        showToast('Status akun berhasil diperbarui!', 'success');
+        
+        // Refresh data
+        const { data: refreshedData } = await sb.from('siswa').select('*').order('nama_lengkap');
+        allQRData = refreshedData || [];
+        renderQRTable(window.currentQRFiltered || allQRData);
+        
+        // Update card status
+        loadQRGenerator();
+        
+    } catch (e) {
+        hideLoading();
+        showToast('Gagal: ' + e.message, 'error');
+    }
+}
+
 function previewKartuSiswa(nama, nisn, kelas) {
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(nisn)}`;
-    const w = window.open('', '_blank', 'width=400,height=600');
+    const w = window.open('', '_blank', 'width=450,height=700');
     w.document.write(`
         <html><head><title>Kartu - ${nama}</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
         <style>
-            body{margin:0;padding:20px;font-family:Arial;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f0f0f0}
+            body{margin:0;padding:20px;font-family:Arial;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:100vh;background:#f0f0f0;gap:16px}
+            .download-btn{padding:10px 24px;background:#004349;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+            .download-btn:hover{background:#0d5c63}
+            .download-btn:disabled{opacity:0.6;cursor:not-allowed}
             .card{width:300px;background:white;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.15);overflow:hidden}
             .card-header{background:#004349;color:white;padding:16px;text-align:center}
             .card-header h2{margin:0;font-size:14px}
@@ -1688,14 +1832,44 @@ function previewKartuSiswa(nama, nisn, kelas) {
             .card-body h3{margin:12px 0 4px;font-size:16px;color:#191c1d}
             .card-body p{margin:2px 0;font-size:12px;color:#666}
             .card-footer{background:#f8fafa;padding:12px;text-align:center;font-size:10px;color:#999}
-        </style></head><body><div class="card">
-            <div class="card-header"><h2>KARTU ABSENSI DIGITAL</h2><p style="margin:4px 0 0;font-size:10px;opacity:0.8">SMK NEGERI 1</p></div>
-            <div class="card-body">
-                <img src="${qrUrl}" alt="QR">
-                <h3>${nama}</h3><p>NISN: ${nisn}</p><p>${kelas}</p>
+        </style></head><body>
+            <div class="card" id="kartuAbsen">
+                <div class="card-header"><h2>KARTU ABSENSI DIGITAL</h2><p style="margin:4px 0 0;font-size:10px;opacity:0.8">SMK NEGERI 1</p></div>
+                <div class="card-body">
+                    <img src="${qrUrl}" alt="QR" crossorigin="anonymous">
+                    <h3>${nama}</h3><p>NISN: ${nisn}</p><p>${kelas}</p>
+                </div>
+                <div class="card-footer">PresensiQR © 2024</div>
             </div>
-            <div class="card-footer">PresensiQR © 2024</div>
-        </div></body></html>
+            <button class="download-btn" id="downloadBtn" onclick="downloadKartu()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download Gambar
+            </button>
+            <script>
+                async function downloadKartu() {
+                    const btn = document.getElementById('downloadBtn');
+                    btn.disabled = true;
+                    btn.innerHTML = 'Memproses...';
+                    try {
+                        const kartu = document.getElementById('kartuAbsen');
+                        const canvas = await html2canvas(kartu, {
+                            scale: 2,
+                            useCORS: true,
+                            allowTaint: true,
+                            backgroundColor: '#ffffff'
+                        });
+                        const link = document.createElement('a');
+                        link.download = 'Kartu_Absen_${nama.replace(/\\s+/g, '_')}.png';
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    } catch (e) {
+                        alert('Gagal mendownload: ' + e.message);
+                    }
+                    btn.disabled = false;
+                    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download Gambar';
+                }
+            <\/script>
+        </body></html>
     `);
     w.document.close();
 }
@@ -1704,11 +1878,107 @@ function generateKartuIndividu(nama, nisn, kelas) {
     previewKartuSiswa(nama, nisn, kelas);
 }
 
+// ============================================================
+// FUNGSI HELPER: Progress Modal untuk Generate Akun
+// ============================================================
+function showProgressModal(judul, totalSiswa) {
+    // Hapus modal lama jika ada
+    const oldModal = document.getElementById('progressGenerateModal');
+    if (oldModal) oldModal.remove();
+    
+    const modalHtml = `
+        <div id="progressGenerateModal" class="fixed inset-0 z-[9999] flex items-center justify-center">
+            <div class="modal-overlay absolute inset-0 bg-black/50"></div>
+            <div class="relative bg-surface-container-lowest rounded-xl shadow-xl max-w-lg w-full mx-4 overflow-hidden">
+                <div class="p-6 border-b flex items-center justify-between" style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
+                    <h3 class="font-headline-sm text-white">${judul}</h3>
+                    <span id="progressCount" class="text-white/80 text-sm font-medium">0 / ${totalSiswa}</span>
+                </div>
+                <div class="p-6">
+                    <!-- Progress Bar -->
+                    <div class="w-full bg-surface-variant h-3 rounded-full overflow-hidden mb-4">
+                        <div id="progressBar" class="bg-primary h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    
+                    <!-- Status Container -->
+                    <div id="progressStatusList" class="space-y-2 max-h-64 overflow-y-auto mb-4 text-sm">
+                        <!-- Item status akan ditambahkan di sini -->
+                    </div>
+                    
+                    <!-- Summary -->
+                    <div class="flex items-center justify-between pt-4 border-t border-outline-variant/30">
+                        <div class="flex items-center gap-4">
+                            <span class="flex items-center gap-1 text-green-600">
+                                <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                                <span id="progressBerhasil">0</span>
+                            </span>
+                            <span class="flex items-center gap-1 text-red-500">
+                                <span class="material-symbols-outlined text-[18px]">cancel</span>
+                                <span id="progressGagal">0</span>
+                            </span>
+                        </div>
+                        <button id="progressCloseBtn" onclick="closeProgressModal()" class="hidden px-4 py-2 rounded-lg bg-primary text-on-primary text-sm font-medium hover:opacity-90">
+                            Tutup
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function updateProgressModal(index, total, namaSiswa, status) {
+    const countEl = document.getElementById('progressCount');
+    const barEl = document.getElementById('progressBar');
+    const listEl = document.getElementById('progressStatusList');
+    const berhasilEl = document.getElementById('progressBerhasil');
+    const gagalEl = document.getElementById('progressGagal');
+    
+    if (!countEl) return;
+    
+    const progress = Math.round(((index + 1) / total) * 100);
+    countEl.textContent = `${index + 1} / ${total}`;
+    barEl.style.width = `${progress}%`;
+    
+    // Tambahkan item status
+    const icon = status === 'berhasil' || status === 'sudah_ada' ? 'check_circle' : 'cancel';
+    const color = status === 'berhasil' || status === 'sudah_ada' ? 'text-green-600' : 'text-red-500';
+    const label = status === 'berhasil' ? 'Berhasil' : status === 'sudah_ada' ? 'Sudah ada' : 'Gagal';
+    
+    const itemHtml = `
+        <div class="flex items-center gap-2 py-1 animate-fadeIn">
+            <span class="material-symbols-outlined text-[18px] ${color}">${icon}</span>
+            <span class="text-on-surface truncate flex-1">${namaSiswa}</span>
+            <span class="text-xs ${color} font-medium">${label}</span>
+        </div>
+    `;
+    listEl.insertAdjacentHTML('beforeend', itemHtml);
+    listEl.scrollTop = listEl.scrollHeight;
+    
+    // Update counter
+    if (status === 'berhasil' || status === 'sudah_ada') {
+        berhasilEl.textContent = parseInt(berhasilEl.textContent) + 1;
+    } else {
+        gagalEl.textContent = parseInt(gagalEl.textContent) + 1;
+    }
+}
+
+function finishProgressModal() {
+    const closeBtn = document.getElementById('progressCloseBtn');
+    if (closeBtn) closeBtn.classList.remove('hidden');
+}
+
+function closeProgressModal() {
+    const modal = document.getElementById('progressGenerateModal');
+    if (modal) modal.remove();
+}
+
 async function generateAkunMasal() {
     showModalConfirm('Generate Akun Massal', 
         'Ini akan membuat akun untuk semua siswa yang belum aktif. Password default adalah tanggal lahir (DDMMYY). Lanjutkan?', 
         async () => {
-            showLoading('Membuat akun...');
             try {
                 const sb = getSupabase();
                 const { data: siswaList } = await sb.from('siswa')
@@ -1716,49 +1986,86 @@ async function generateAkunMasal() {
                     .neq('status_akun', 'Aktif');
                 
                 if (!siswaList || siswaList.length === 0) {
-                    hideLoading();
                     showToast('Semua siswa sudah memiliki akun aktif', 'info');
                     return;
                 }
                 
+                // Tampilkan progress modal
+                showProgressModal('Generate Akun Massal', siswaList.length);
+                
+                // Ambil semua username yang sudah ada di users
+                const { data: existingUsers } = await sb.from('users').select('username');
+                const existingUsernames = new Set((existingUsers || []).map(u => u.username));
+                
                 let berhasil = 0;
-                for (const s of siswaList) {
+                let gagal = 0;
+                
+                for (let i = 0; i < siswaList.length; i++) {
+                    const s = siswaList[i];
+                    let status = 'gagal';
+                    
                     try {
-                        let password = '123456';
-                        if (s.tanggal_lahir) {
-                            const tgl = new Date(s.tanggal_lahir);
-                            password = String(tgl.getDate()).padStart(2, '0') + 
-                                       String(tgl.getMonth() + 1).padStart(2, '0') + 
-                                       String(tgl.getFullYear()).slice(-2);
-                        }
-                        
-                        const { data: userData } = await sb.from('users').insert({
-                            username: s.nisn,
-                            password: password,
-                            level: 'siswa',
-                            id_referensi: s.id,
-                            status: 'Aktif'
-                        }).select().single();
-                        
-                        if (userData) {
-                            await sb.from('siswa').update({
-                                status_akun: 'Aktif',
-                                user_id: userData.id
-                            }).eq('id', s.id);
-                            berhasil++;
+                        // Cek apakah NISN sudah ada di tabel users
+                        if (existingUsernames.has(s.nisn)) {
+                            const { data: existingUser } = await sb.from('users')
+                                .select('*').eq('username', s.nisn).maybeSingle();
+                            
+                            if (existingUser) {
+                                await sb.from('users').update({ status: 'Aktif' }).eq('id', existingUser.id);
+                                await sb.from('siswa').update({
+                                    status_akun: 'Aktif',
+                                    user_id: existingUser.id
+                                }).eq('id', s.id);
+                                status = 'sudah_ada';
+                                berhasil++;
+                            }
+                        } else {
+                            let password = '123456';
+                            if (s.tanggal_lahir) {
+                                const tgl = new Date(s.tanggal_lahir);
+                                password = String(tgl.getDate()).padStart(2, '0') + 
+                                           String(tgl.getMonth() + 1).padStart(2, '0') + 
+                                           String(tgl.getFullYear()).slice(-2);
+                            }
+                            
+                            const { data: userData } = await sb.from('users').insert({
+                                username: s.nisn,
+                                password: password,
+                                level: 'siswa',
+                                id_referensi: s.id,
+                                status: 'Aktif'
+                            }).select();
+                            
+                            if (userData && userData.length > 0) {
+                                await sb.from('siswa').update({
+                                    status_akun: 'Aktif',
+                                    user_id: userData[0].id
+                                }).eq('id', s.id);
+                                status = 'berhasil';
+                                berhasil++;
+                                existingUsernames.add(s.nisn);
+                            }
                         }
                     } catch (e) {
+                        gagal++;
                         console.warn(`Gagal buat akun ${s.nama_lengkap}:`, e.message);
                     }
+                    
+                    // Update progress modal
+                    updateProgressModal(i, siswaList.length, s.nama_lengkap, status);
+                    
+                    // Delay kecil agar animasi terlihat
+                    await new Promise(resolve => setTimeout(resolve, 50));
                 }
                 
-                hideLoading();
-                showToast(`Berhasil membuat ${berhasil} akun!`, 'success');
-                catatLog(currentUser.username, 'Generate Akun Massal', `${berhasil} akun dibuat`);
+                // Selesai
+                finishProgressModal();
+                showToast(`Berhasil: ${berhasil}, Gagal: ${gagal}`, berhasil > 0 ? 'success' : 'error');
+                catatLog(currentUser.username, 'Generate Akun Massal', `${berhasil} akun dibuat/diaktifkan`);
                 loadQRGenerator();
                 
             } catch (e) {
-                hideLoading();
+                closeProgressModal();
                 showToast('Gagal: ' + e.message, 'error');
             }
         });
@@ -1770,10 +2077,107 @@ async function generateTerpilih() {
         showToast('Pilih minimal 1 siswa', 'warning');
         return;
     }
-    showToast(`Membuka ${checked.length} kartu di tab baru...`, 'info');
-    checked.forEach(cb => {
-        previewKartuSiswa(cb.dataset.nama, cb.dataset.nisn, `${cb.dataset.kelas} ${cb.dataset.jurusan}`);
-    });
+    
+    const selectedIds = Array.from(checked).map(cb => parseInt(cb.value));
+    const selectedSiswa = allQRData.filter(s => selectedIds.includes(s.id) && s.status_akun !== 'Aktif');
+    
+    if (selectedSiswa.length === 0) {
+        showToast('Semua siswa yang dipilih sudah memiliki akun aktif', 'info');
+        return;
+    }
+    
+    showModalConfirm('Generate Akun Terpilih', 
+        `Ini akan membuat akun untuk ${selectedSiswa.length} siswa yang dipilih. Password default adalah tanggal lahir (DDMMYY). Lanjutkan?`, 
+        async () => {
+            try {
+                const sb = getSupabase();
+                
+                // Tampilkan progress modal
+                showProgressModal('Generate Akun Terpilih', selectedSiswa.length);
+                
+                // Ambil semua username yang sudah ada di users
+                const { data: existingUsers } = await sb.from('users').select('username');
+                const existingUsernames = new Set((existingUsers || []).map(u => u.username));
+                
+                let berhasil = 0;
+                let gagal = 0;
+                
+                for (let i = 0; i < selectedSiswa.length; i++) {
+                    const s = selectedSiswa[i];
+                    let status = 'gagal';
+                    
+                    try {
+                        // Cek apakah NISN sudah ada di tabel users
+                        if (existingUsernames.has(s.nisn)) {
+                            const { data: existingUser } = await sb.from('users')
+                                .select('*').eq('username', s.nisn).maybeSingle();
+                            
+                            if (existingUser) {
+                                await sb.from('users').update({ status: 'Aktif' }).eq('id', existingUser.id);
+                                await sb.from('siswa').update({
+                                    status_akun: 'Aktif',
+                                    user_id: existingUser.id
+                                }).eq('id', s.id);
+                                status = 'sudah_ada';
+                                berhasil++;
+                                existingUsernames.add(s.nisn);
+                            }
+                        } else {
+                            let password = '123456';
+                            if (s.tanggal_lahir) {
+                                const tgl = new Date(s.tanggal_lahir);
+                                password = String(tgl.getDate()).padStart(2, '0') + 
+                                           String(tgl.getMonth() + 1).padStart(2, '0') + 
+                                           String(tgl.getFullYear()).slice(-2);
+                            }
+                            
+                            const { data: userData } = await sb.from('users').insert({
+                                username: s.nisn,
+                                password: password,
+                                level: 'siswa',
+                                id_referensi: s.id,
+                                status: 'Aktif'
+                            }).select();
+                            
+                            if (userData && userData.length > 0) {
+                                await sb.from('siswa').update({
+                                    status_akun: 'Aktif',
+                                    user_id: userData[0].id
+                                }).eq('id', s.id);
+                                status = 'berhasil';
+                                berhasil++;
+                                existingUsernames.add(s.nisn);
+                            }
+                        }
+                    } catch(e) {
+                        gagal++;
+                        console.warn(`Gagal buat akun ${s.nama_lengkap}:`, e.message);
+                    }
+                    
+                    // Update progress modal
+                    updateProgressModal(i, selectedSiswa.length, s.nama_lengkap, status);
+                    
+                    // Delay kecil agar animasi terlihat
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                }
+                
+                // Selesai
+                finishProgressModal();
+                showToast(`Berhasil: ${berhasil}, Gagal: ${gagal}`, berhasil > 0 ? 'success' : 'error');
+                
+                // Refresh data
+                const { data: refreshedData } = await sb.from('siswa').select('*').order('nama_lengkap');
+                allQRData = refreshedData || [];
+                renderQRTable(window.currentQRFiltered || allQRData);
+                
+                // Update card status
+                loadQRGenerator();
+                
+            } catch (e) {
+                hideLoading();
+                showToast('Gagal: ' + e.message, 'error');
+            }
+        });
 }
 
 function downloadZipKartu() {
