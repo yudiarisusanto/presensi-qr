@@ -103,6 +103,119 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/style.css">
+    
+    <style>
+        /* Styling untuk popup profil */
+        .profile-popup-enter {
+            animation: popupFadeIn 0.2s ease-out;
+        }
+        @keyframes popupFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* ==========================================
+           DARK MODE STYLING DASAR (sama seperti admin)
+           ========================================== */
+        .dark body {
+            background-color: #191c1d !important;
+            color: #eff1f1 !important;
+        }
+        
+        .dark .bg-background,
+        .dark .bg-surface {
+            background-color: #191c1d !important;
+        }
+        
+        .dark .bg-surface-container-lowest {
+            background-color: #2e3131 !important;
+        }
+        
+        .dark .bg-surface-container-low {
+            background-color: #272a2b !important;
+        }
+        
+        .dark .bg-surface-container {
+            background-color: #2e3131 !important;
+        }
+        
+        .dark .bg-surface-container-high {
+            background-color: #393c3d !important;
+        }
+        
+        .dark .bg-white {
+            background-color: #2e3131 !important;
+        }
+        
+        .dark .text-on-surface {
+            color: #eff1f1 !important;
+        }
+        
+        .dark .text-on-surface-variant {
+            color: #bfc8c9 !important;
+        }
+        
+        .dark .text-on-background {
+            color: #eff1f1 !important;
+        }
+        
+        .dark .border-outline-variant\/30,
+        .dark .border-outline-variant {
+            border-color: rgba(111, 121, 122, 0.5) !important;
+        }
+        
+        .dark .hover\:bg-surface-container-highest:hover {
+            background-color: #393c3d !important;
+        }
+        
+        .dark .hover\:bg-surface-container-low:hover {
+            background-color: #272a2b !important;
+        }
+        
+        .dark .hover\:bg-red-50:hover {
+            background-color: rgba(186, 26, 26, 0.2) !important;
+        }
+        
+        /* Dark mode untuk sidebar */
+        .dark #sidebar {
+            background-color: #2e3131 !important;
+        }
+        
+        /* Dark mode untuk card */
+        .dark .stat-card {
+            background-color: #2e3131 !important;
+        }
+        
+        /* Dark mode untuk input */
+        .dark input, .dark select, .dark textarea {
+            background-color: #272a2b !important;
+            color: #eff1f1 !important;
+            border-color: rgba(111, 121, 122, 0.5) !important;
+        }
+        
+        /* Dark mode untuk popup profil */
+        .dark #profilePopup {
+            background-color: #2e3131 !important;
+        }
+        
+        .dark #profilePopup button:not([style*="background: linear-gradient"]) {
+            color: #eff1f1 !important;
+        }
+        
+        .dark #profilePopup .text-on-surface-variant {
+            color: #bfc8c9 !important;
+        }
+        
+        /* Card warna Merah untuk Alpa */
+        .card-red::before { background-color: #dc2626; }
+        .card-red .stat-card-icon { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
+    </style>
 </head>
 <body class="bg-background text-on-background font-body-md antialiased min-h-screen">
     
@@ -141,21 +254,24 @@
     <div class="flex min-h-screen">
         
         <!-- SIDEBAR -->
-        <nav id="sidebar" class="fixed left-0 top-0 h-full w-[260px] z-50 bg-surface-container-lowest flex flex-col pt-0 pb-stack-lg border-r border-outline-variant hidden md:flex">
-            <!-- Header Logo -->
+        <!-- Klik logo PresensiQR untuk toggle expand/collapse di SEMUA perangkat -->
+        <nav id="sidebar" class="fixed left-0 top-0 h-full z-50 bg-surface-container-lowest flex flex-col pt-0 pb-stack-lg border-r border-outline-variant sidebar-expanded">
+            
+            <!-- Header Logo - DAPAT DIKLIK untuk toggle sidebar -->
             <div class="px-gutter mb-stack-lg h-16 flex items-center">
-                <h1 class="font-headline-sm text-headline-sm text-primary flex items-center gap-2">
-                    <span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">qr_code_2</span>
-                    PresensiQR
-                </h1>
+                <div class="sidebar-logo font-headline-sm text-headline-sm text-primary flex items-center gap-2" 
+                     onclick="toggleSidebar()" title="Klik untuk membuka/menutup menu">
+                    <span class="material-symbols-outlined sidebar-logo-icon text-[24px]" style="font-variation-settings: 'FILL' 1;">qr_code_2</span>
+                    <span class="sidebar-text">PresensiQR</span>
+                </div>
             </div>
             
             <!-- User Profile -->
-            <div class="px-gutter mb-stack-md flex items-center gap-3">
+            <div class="sidebar-profile px-gutter mb-stack-md flex items-center gap-3">
                 <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-primary font-bold shrink-0">
                     <span id="sidebarUserInitial">S</span>
                 </div>
-                <div class="overflow-hidden">
+                <div class="sidebar-profile-text overflow-hidden">
                     <p class="font-label-md text-label-md text-on-surface truncate" id="sidebarUserName">Nama Siswa</p>
                     <p class="text-xs text-on-surface-variant truncate" id="sidebarUserLevel">Kelas</p>
                 </div>
@@ -167,67 +283,124 @@
                     <!-- Dashboard Siswa -->
                     <li>
                         <a class="nav-item active flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer" 
-                           data-page="dashboardSiswa" onclick="loadPage('dashboardSiswa')">
+                           data-page="dashboardSiswa" data-tooltip="Dashboard" onclick="loadPage('dashboardSiswa')">
                             <span class="material-symbols-outlined">dashboard</span>
-                            <span class="font-label-md text-label-md">Dashboard</span>
+                            <span class="sidebar-text font-label-md text-label-md">Dashboard</span>
                         </a>
                     </li>
                     
                     <!-- QR Scanner (Siswa bisa scan absen sendiri) -->
                     <li>
                         <a class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer" 
-                           data-page="qrScannerSiswa" onclick="loadPage('qrScannerSiswa')">
+                           data-page="qrScannerSiswa" data-tooltip="Scan Absen" onclick="loadPage('qrScannerSiswa')">
                             <span class="material-symbols-outlined">qr_code_scanner</span>
-                            <span class="font-label-md text-label-md">Scan Absen</span>
+                            <span class="sidebar-text font-label-md text-label-md">Scan Absen</span>
                         </a>
                     </li>
                     
                     <!-- Profil Saya -->
                     <li>
                         <a class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer" 
-                           data-page="profilSiswa" onclick="loadPage('profilSiswa')">
+                           data-page="profilSiswa" data-tooltip="Profil Saya" onclick="loadPage('profilSiswa')">
                             <span class="material-symbols-outlined">person</span>
-                            <span class="font-label-md text-label-md">Profil Saya</span>
+                            <span class="sidebar-text font-label-md text-label-md">Profil Saya</span>
+                        </a>
+                    </li>
+                    
+                    <!-- Pengaturan - tepat di bawah Profil Saya, sama seperti admin -->
+                    <li>
+                        <a class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer" 
+                           data-page="pengaturanSiswa" data-tooltip="Pengaturan" onclick="loadPage('pengaturanSiswa')">
+                            <span class="material-symbols-outlined">settings</span>
+                            <span class="sidebar-text font-label-md text-label-md">Pengaturan</span>
                         </a>
                     </li>
                 </ul>
             </div>
             
-            <!-- Footer Menu -->
-            <div class="mt-auto px-base">
-                <ul class="space-y-1">
-                    <li>
-                        <a class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer" 
-                           data-page="pengaturanSiswa" onclick="loadPage('pengaturanSiswa')">
-                            <span class="material-symbols-outlined">settings</span>
-                            <span class="font-label-md text-label-md">Pengaturan</span>
-                        </a>
-                    </li>
-                    <li>
-                        <button onclick="doLogout()" class="w-full mt-2 py-2 px-4 rounded-lg border border-error text-error font-label-md hover:bg-error-container/20 transition-all flex items-center justify-center gap-2">
-                            <span class="material-symbols-outlined text-[18px]">logout</span>
-                            Keluar
-                        </button>
-                    </li>
-                </ul>
+            <!-- Tombol Logout - di bagian paling bawah, sama seperti admin -->
+            <div class="px-gutter mt-4">
+                <button onclick="doLogout()" class="logout-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border-2 border-red-500 text-red-500 hover:bg-red-50 transition-all font-semibold">
+                    <span class="material-symbols-outlined">logout</span>
+                    <span class="logout-text">Keluar</span>
+                </button>
             </div>
         </nav>
         
         <!-- MAIN CONTENT -->
-        <main class="flex-1 md:ml-[260px] w-full">
-            <!-- TOP NAVBAR MOBILE -->
+        <!-- class="main-content sidebar-expanded" - default state expanded -->
+        <main class="main-content sidebar-expanded flex-1 w-full">
+            <!-- TOP NAVBAR - Notifikasi, Dark/Light Mode, Foto Profil + Popup (sama seperti admin) -->
             <header class="flex justify-between items-center px-container-padding h-16 w-full sticky top-0 z-40 border-b border-outline-variant/30 shadow-sm" 
                     style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
                 <div class="flex items-center gap-3">
-                    <button onclick="toggleMobileSidebar()" class="p-2 -ml-2 rounded-lg hover:bg-white/10 transition-colors" style="color: white;">
+                    <button onclick="toggleMobileSidebar()" class="mobile-menu-btn" style="color: white;">
                         <span class="material-symbols-outlined">menu</span>
                     </button>
                     <h1 class="text-headline-md font-headline-md font-bold" style="color: white;">PresensiQR</h1>
                 </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm" 
-                         style="background: rgba(255,255,255,0.2); color: white;">
-                        <span id="mobileUserInitial">S</span>
+                <div class="flex items-center gap-4">
+                    <!-- Ikon Notifikasi (Lonceng) -->
+                    <button onclick="tampilkanNotifikasi()" class="relative p-2 rounded-lg hover:bg-white/10 transition-colors" style="color: white;" title="Notifikasi">
+                        <span class="material-symbols-outlined">notifications</span>
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                    </button>
+                    
+                    <!-- Ikon Dark/Light Mode -->
+                    <button onclick="toggleDarkMode()" class="p-2 rounded-lg hover:bg-white/10 transition-colors" style="color: white;" title="Ganti Mode Tampilan">
+                        <span class="material-symbols-outlined" id="darkModeIcon">dark_mode</span>
+                    </button>
+                    
+                    <!-- Foto Profil + Teks (bisa diklik untuk popup) - disesuaikan untuk siswa -->
+                    <div class="relative" id="profileContainer">
+                        <button onclick="toggleProfilePopup()" class="flex items-center gap-3 pl-3 pr-2 py-1.5 rounded-lg hover:bg-white/10 transition-colors">
+                            <div class="text-right hidden sm:block">
+                                <p class="text-sm font-semibold leading-tight" style="color: white;" id="headerUserName">Nama Siswa</p>
+                                <p class="text-xs leading-tight" style="color: rgba(255,255,255,0.7);" id="headerUserLevel">Siswa</p>
+                            </div>
+                            <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold shrink-0 overflow-hidden border-2 border-white/30" 
+                                 style="background: rgba(255,255,255,0.2); color: white;">
+                                <span id="headerUserInitial">S</span>
+                            </div>
+                        </button>
+                        
+                        <!-- Popup Dropdown Profil - disesuaikan untuk siswa -->
+                        <div id="profilePopup" class="hidden absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-outline-variant/30 overflow-hidden z-50 profile-popup-enter">
+                            <!-- Bagian Atas: Foto + Nama -->
+                            <div class="p-5 border-b border-outline-variant/20" style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-16 h-16 rounded-full flex items-center justify-center font-bold text-xl shrink-0 border-2 border-white/50" 
+                                         style="background: rgba(255,255,255,0.2); color: white;">
+                                        <span id="popupUserInitial">S</span>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-base" style="color: white;" id="popupUserName">Nama Siswa</p>
+                                        <p class="text-sm" style="color: rgba(255,255,255,0.8);" id="popupUserLevel">Siswa</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Menu Menu - disesuaikan untuk siswa -->
+                            <div class="py-2">
+                                <button onclick="closeProfilePopup(); loadPage('profilSiswa');" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-low transition-colors text-left">
+                                    <span class="material-symbols-outlined text-on-surface-variant">person</span>
+                                    <span class="text-sm font-medium text-on-surface">Profil</span>
+                                </button>
+                                <button onclick="bukaPengaturanAkun()" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-low transition-colors text-left">
+                                    <span class="material-symbols-outlined text-on-surface-variant">manage_accounts</span>
+                                    <span class="text-sm font-medium text-on-surface">Akun</span>
+                                </button>
+                                <button onclick="toggleDarkModeFromPopup()" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-low transition-colors text-left">
+                                    <span class="material-symbols-outlined text-on-surface-variant">brush</span>
+                                    <span class="text-sm font-medium text-on-surface">Penampilan</span>
+                                </button>
+                                <div class="border-t border-outline-variant/20 my-1"></div>
+                                <button onclick="keluarAkun()" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-left">
+                                    <span class="material-symbols-outlined text-red-500">logout</span>
+                                    <span class="text-sm font-medium text-red-500">Keluar</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -248,6 +421,9 @@
     <script>
         // Tambahkan fungsi khusus dashboard siswa
         async function loadDashboardSiswa() {
+            // Perbarui info user di header dan popup
+            updateUserHeaderInfo();
+            
             const user = currentUser;
             const contentArea = document.getElementById('content-area');
             
@@ -275,7 +451,7 @@
             
             contentArea.innerHTML = `
                 <div>
-                    <header class="mb-stack-lg border-b border-outline-variant pb-stack-sm">
+                    <header class="mb-stack-lg pb-stack-sm">
                         <h1 class="font-headline-lg text-headline-lg text-on-surface mb-2">Dashboard Siswa</h1>
                         <p class="font-body-lg text-body-lg text-on-surface-variant">Selamat datang, ${user.nama}. Pantau kehadiran Anda secara mandiri.</p>
                     </header>
@@ -304,45 +480,56 @@
                             </div>
                         </div>
                         
-                        <!-- Quick Stats -->
+                        <!-- Quick Stats - desain stat-card sama seperti admin -->
                         <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-gutter">
-                            <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30">
-                                <div class="flex items-center justify-between mb-3">
-                                    <p class="font-label-md text-on-surface-variant uppercase tracking-wide">Hadir</p>
-                                    <div class="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                                        <span class="material-symbols-outlined text-green-600">check_circle</span>
-                                    </div>
+                            <!-- Card Hadir - Hijau (#16a34a) -->
+                            <div class="stat-card card-green bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden">
+                                <div class="stat-card-icon">
+                                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
                                 </div>
-                                <p class="text-4xl font-bold text-on-surface tracking-tighter">${stats.hadir}</p>
-                                <p class="text-sm text-on-surface-variant mt-1">hari</p>
+                                <p class="font-label-md text-on-surface-variant uppercase tracking-wide text-xs mb-2">Hadir</p>
+                                <p class="stat-card-number text-3xl font-bold tracking-tighter" style="color: #16a34a;">${stats.hadir}</p>
+                                <p class="text-xs text-on-surface-variant mt-1">hari</p>
                             </div>
                             
-                            <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30">
-                                <div class="flex items-center justify-between mb-3">
-                                    <p class="font-label-md text-on-surface-variant uppercase tracking-wide">Alpa</p>
-                                    <div class="w-10 h-10 rounded-lg bg-error/10 flex items-center justify-center">
-                                        <span class="material-symbols-outlined text-error">close</span>
-                                    </div>
+                            <!-- Card Alpa - Merah (#dc2626) -->
+                            <div class="stat-card card-red bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden">
+                                <div class="stat-card-icon">
+                                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">close</span>
                                 </div>
-                                <p class="text-4xl font-bold text-on-surface tracking-tighter">${stats.alpa}</p>
-                                <p class="text-sm text-on-surface-variant mt-1">hari</p>
+                                <p class="font-label-md text-on-surface-variant uppercase tracking-wide text-xs mb-2">Alpa</p>
+                                <p class="stat-card-number text-3xl font-bold tracking-tighter" style="color: #dc2626;">${stats.alpa}</p>
+                                <p class="text-xs text-on-surface-variant mt-1">hari</p>
                             </div>
                             
-                            <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30">
-                                <div class="flex items-center justify-between mb-3">
-                                    <p class="font-label-md text-on-surface-variant uppercase tracking-wide">Persentase</p>
-                                    <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                                        <span class="material-symbols-outlined text-primary">percent</span>
-                                    </div>
+                            <!-- Card Persentase - Biru (#2563eb) -->
+                            <div class="stat-card card-blue bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden">
+                                <div class="stat-card-icon">
+                                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">percent</span>
                                 </div>
-                                <p class="text-4xl font-bold text-primary tracking-tighter">${persentase}%</p>
-                                <p class="text-sm text-on-surface-variant mt-1">kehadiran</p>
+                                <p class="font-label-md text-on-surface-variant uppercase tracking-wide text-xs mb-2">Persentase</p>
+                                <p class="stat-card-number text-3xl font-bold tracking-tighter" style="color: #2563eb;">${persentase}%</p>
+                                <p class="text-xs text-on-surface-variant mt-1">kehadiran</p>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Quick Actions -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter mb-stack-lg">
+                    <!-- Quick Actions + Panduan - Urutan: Panduan > Aksi Cepat > Visualisasi -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter mb-stack-lg">
+                        
+                        <!-- Card Panduan Penggunaan - warna hijau gradien (sama seperti admin) -->
+                        <div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary to-primary-container p-6 text-on-primary shadow-sm">
+                            <div class="absolute -right-10 -top-10 opacity-10"><span class="material-symbols-outlined text-9xl">help_center</span></div>
+                            <h2 class="font-headline-sm text-headline-sm font-bold mb-2 relative z-10">Panduan Penggunaan</h2>
+                            <p class="text-sm text-on-primary/80 mb-4 relative z-10">Langkah cepat melakukan absensi hari ini.</p>
+                            <ul class="space-y-3 relative z-10 text-sm">
+                                <li class="flex items-start gap-2"><span class="material-symbols-outlined text-sm mt-0.5 bg-on-primary/20 rounded-full p-0.5">mobile_arrow_right</span>Buka menu <strong>Scan Absen</strong> saat jam pelajaran.</li>
+                                <li class="flex items-start gap-2"><span class="material-symbols-outlined text-sm mt-0.5 bg-on-primary/20 rounded-full p-0.5">waves</span>Arahkan kamera ke <strong>QR Code</strong> dari guru.</li>
+                                <li class="flex items-start gap-2"><span class="material-symbols-outlined text-sm mt-0.5 bg-on-primary/20 rounded-full p-0.5">visibility</span>Cek status di <strong>Dashboard</strong> atau Profil Saya.</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Aksi Cepat -->
                         <div class="bg-surface-container-lowest rounded-xl p-container-padding shadow-sm border border-outline-variant/30">
                             <h2 class="font-headline-sm text-headline-sm text-on-surface mb-4 flex items-center gap-2">
                                 <span class="material-symbols-outlined text-primary">quick_reference</span>Aksi Cepat
@@ -406,11 +593,12 @@
                         </div>
                     </div>
                     
-                    <!-- Riwayat Kehadiran Terbaru -->
+                    <!-- Riwayat Kehadiran Terbaru - header hijau gradien -->
                     <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden">
-                        <div class="p-4 border-b border-outline-variant bg-surface-bright">
-                            <h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
-                                <span class="material-symbols-outlined text-primary">history</span>Riwayat Kehadiran Terbaru
+                        <div class="p-4 border-b border-outline-variant/30 flex items-center" 
+                             style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
+                            <h2 class="font-headline-sm text-headline-sm font-bold flex items-center gap-2" style="color: white;">
+                                <span class="material-symbols-outlined" style="color: white;">history</span>Riwayat Kehadiran Terbaru
                             </h2>
                         </div>
                         <div class="overflow-x-auto">
@@ -493,7 +681,7 @@
             
             contentArea.innerHTML = `
                 <div>
-                    <header class="mb-stack-lg border-b border-outline-variant pb-stack-sm">
+                    <header class="mb-stack-lg pb-stack-sm">
                         <h1 class="font-headline-lg text-headline-lg text-on-surface mb-2">Profil Saya</h1>
                         <p class="font-body-lg text-body-lg text-on-surface-variant">Kelola informasi pribadi dan unduh kartu absensi Anda.</p>
                     </header>
@@ -531,9 +719,10 @@
                         
                         <div class="lg:col-span-2">
                             <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden">
-                                <div class="p-4 border-b border-outline-variant bg-surface-bright">
-                                    <h2 class="font-headline-sm text-on-surface flex items-center gap-2">
-                                        <span class="material-symbols-outlined text-primary">info</span>Informasi Pribadi
+                                <div class="p-4 border-b border-outline-variant/30 flex items-center" 
+                                     style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
+                                    <h2 class="font-headline-sm text-headline-sm font-bold flex items-center gap-2" style="color: white;">
+                                        <span class="material-symbols-outlined" style="color: white;">info</span>Informasi Pribadi
                                     </h2>
                                 </div>
                                 <div class="p-container-padding">
@@ -563,15 +752,19 @@
             const contentArea = document.getElementById('content-area');
             contentArea.innerHTML = `
                 <div>
-                    <header class="mb-stack-lg border-b border-outline-variant pb-stack-sm">
+                    <header class="mb-stack-lg pb-stack-sm">
                         <h1 class="font-headline-lg text-headline-lg text-on-surface mb-2">Pengaturan</h1>
                         <p class="font-body-lg text-body-lg text-on-surface-variant">Kelola keamanan akun Anda.</p>
                     </header>
                     
-                    <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 p-container-padding max-w-2xl">
-                        <h2 class="font-headline-sm text-on-surface mb-6 flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary">lock</span>Keamanan Akun
-                        </h2>
+                    <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden max-w-2xl">
+                        <div class="p-4 border-b border-outline-variant/30 flex items-center" 
+                             style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
+                            <h2 class="font-headline-sm text-headline-sm font-bold flex items-center gap-2" style="color: white;">
+                                <span class="material-symbols-outlined" style="color: white;">lock</span>Keamanan Akun
+                            </h2>
+                        </div>
+                        <div class="p-container-padding">
                         
                         <div class="p-4 bg-primary/5 rounded-lg border border-primary/20 mb-6">
                             <p class="font-label-md text-primary font-semibold">Informasi Akun</p>
@@ -592,6 +785,8 @@
                                 <button type="submit" class="px-5 py-2 rounded-lg bg-primary text-on-primary hover:opacity-90 shadow-sm">Ubah Password</button>
                             </div>
                         </form>
+                        
+                        </div>
                     </div>
                 </div>
             `;
@@ -670,9 +865,262 @@
             }
         };
         
+        // ============================================================
+        // FUNGSI TOGGLE SIDEBAR - EXPAND / COLLAPSE (sama persis dengan admin)
+        // ============================================================
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            
+            if (!sidebar) return;
+            
+            const isCurrentlyCollapsed = sidebar.classList.contains('sidebar-collapsed');
+            
+            if (isCurrentlyCollapsed) {
+                sidebar.classList.remove('sidebar-collapsed');
+                sidebar.classList.add('sidebar-expanded');
+                if (mainContent) {
+                    mainContent.classList.remove('sidebar-collapsed');
+                    mainContent.classList.add('sidebar-expanded');
+                    mainContent.classList.remove('sidebar-mobile-full');
+                }
+                localStorage.setItem('sidebarCollapsed', 'false');
+            } else {
+                sidebar.classList.remove('sidebar-expanded');
+                sidebar.classList.add('sidebar-collapsed');
+                if (mainContent) {
+                    mainContent.classList.remove('sidebar-expanded');
+                    mainContent.classList.add('sidebar-collapsed');
+                    mainContent.classList.remove('sidebar-mobile-full');
+                }
+                localStorage.setItem('sidebarCollapsed', 'true');
+            }
+        }
+        
+        // ============================================================
+        // FUNGSI TOGGLE MOBILE SIDEBAR (sama persis dengan admin)
+        // ============================================================
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            
+            if (!sidebar) return;
+            
+            const isHidden = sidebar.classList.contains('sidebar-mobile-hidden');
+            
+            if (isHidden) {
+                sidebar.classList.remove('sidebar-mobile-hidden');
+                if (mainContent) {
+                    mainContent.classList.remove('sidebar-mobile-full');
+                }
+                initSidebarState();
+            } else {
+                sidebar.classList.add('sidebar-mobile-hidden');
+                if (mainContent) {
+                    mainContent.classList.add('sidebar-mobile-full');
+                    mainContent.classList.remove('sidebar-expanded', 'sidebar-collapsed');
+                }
+            }
+        }
+        
+        // ============================================================
+        // INISIALISASI STATE SIDEBAR
+        // ============================================================
+        function initSidebarState() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            
+            if (!sidebar) return;
+            if (sidebar.classList.contains('sidebar-mobile-hidden')) return;
+            
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            
+            sidebar.classList.remove('sidebar-expanded', 'sidebar-collapsed');
+            if (mainContent) {
+                mainContent.classList.remove('sidebar-expanded', 'sidebar-collapsed', 'sidebar-mobile-full');
+            }
+            
+            if (isCollapsed) {
+                sidebar.classList.add('sidebar-collapsed');
+                if (mainContent) mainContent.classList.add('sidebar-collapsed');
+            } else {
+                sidebar.classList.add('sidebar-expanded');
+                if (mainContent) mainContent.classList.add('sidebar-expanded');
+            }
+        }
+        
+        // Panggil initSidebarState saat halaman dimuat
+        initSidebarState();
+        
+        // ============================================================
+        // FUNGSI PROFILE POPUP (sama seperti admin)
+        // ============================================================
+        function toggleProfilePopup() {
+            const popup = document.getElementById('profilePopup');
+            if (popup) {
+                popup.classList.toggle('hidden');
+                if (!popup.classList.contains('hidden')) {
+                    popup.classList.add('profile-popup-enter');
+                }
+            }
+        }
+        
+        function closeProfilePopup() {
+            const popup = document.getElementById('profilePopup');
+            if (popup) {
+                popup.classList.add('hidden');
+            }
+        }
+        
+        // Tutup popup saat klik di luar area popup
+        document.addEventListener('click', function(event) {
+            const container = document.getElementById('profileContainer');
+            const popup = document.getElementById('profilePopup');
+            
+            if (container && popup && !container.contains(event.target)) {
+                popup.classList.add('hidden');
+            }
+        });
+        
+        // ============================================================
+        // FUNGSI DARK/LIGHT MODE (sama seperti admin)
+        // ============================================================
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('darkModeIcon');
+            
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('darkMode', 'false');
+                if (icon) icon.textContent = 'dark_mode';
+                tampilkanPesanSederhana('Mode Terang diaktifkan', 'info');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('darkMode', 'true');
+                if (icon) icon.textContent = 'light_mode';
+                tampilkanPesanSederhana('Mode Gelap diaktifkan', 'info');
+            }
+        }
+        
+        function toggleDarkModeFromPopup() {
+            closeProfilePopup();
+            toggleDarkMode();
+        }
+        
+        function initDarkMode() {
+            const isDark = localStorage.getItem('darkMode') === 'true';
+            const icon = document.getElementById('darkModeIcon');
+            
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                if (icon) icon.textContent = 'light_mode';
+            } else {
+                document.documentElement.classList.remove('dark');
+                if (icon) icon.textContent = 'dark_mode';
+            }
+        }
+        
+        // Panggil initDarkMode saat halaman dimuat
+        initDarkMode();
+        
+        // ============================================================
+        // FUNGSI MENU POPUP - disesuaikan untuk siswa
+        // ============================================================
+        
+        // Menu: Akun (arahkan ke Pengaturan Siswa)
+        function bukaPengaturanAkun() {
+            closeProfilePopup();
+            loadPage('pengaturanSiswa');
+        }
+        
+        // Menu: Notifikasi
+        function tampilkanNotifikasi() {
+            tampilkanPesanSederhana('Tidak ada notifikasi baru', 'info');
+        }
+        
+        // Menu: Keluar
+        function keluarAkun() {
+            closeProfilePopup();
+            if (typeof doLogout === 'function') {
+                doLogout();
+            } else {
+                localStorage.removeItem('userSession');
+                window.location.href = 'index.html';
+            }
+        }
+        
+        // ============================================================
+        // FUNGSI BANTUAN
+        // ============================================================
+        
+        // Tampilkan pesan sederhana (gunakan showToast jika tersedia)
+        function tampilkanPesanSederhana(message, type) {
+            if (typeof showToast === 'function') {
+                showToast(message, type);
+            } else {
+                alert(message);
+            }
+        }
+        
+        // ============================================================
+        // PERBARUI DATA USER DI HEADER DAN POPUP
+        // ============================================================
+        function updateUserHeaderInfo() {
+            if (!currentUser) return;
+            
+            // Update inisial dan nama di berbagai elemen
+            const initial = currentUser.nama ? currentUser.nama.charAt(0).toUpperCase() : 'S';
+            
+            // Header navbar
+            const headerUserName = document.getElementById('headerUserName');
+            const headerUserLevel = document.getElementById('headerUserLevel');
+            const headerUserInitial = document.getElementById('headerUserInitial');
+            
+            if (headerUserName) headerUserName.textContent = currentUser.nama || 'Nama Siswa';
+            if (headerUserLevel) headerUserLevel.textContent = (currentUser.kelas || '') + ' ' + (currentUser.jurusan || '') || 'Siswa';
+            if (headerUserInitial) headerUserInitial.textContent = initial;
+            
+            // Popup profil
+            const popupUserName = document.getElementById('popupUserName');
+            const popupUserLevel = document.getElementById('popupUserLevel');
+            const popupUserInitial = document.getElementById('popupUserInitial');
+            
+            if (popupUserName) popupUserName.textContent = currentUser.nama || 'Nama Siswa';
+            if (popupUserLevel) popupUserLevel.textContent = (currentUser.kelas || '') + ' ' + (currentUser.jurusan || '') || 'Siswa';
+            if (popupUserInitial) popupUserInitial.textContent = initial;
+            
+            // Sidebar
+            const sidebarUserName = document.getElementById('sidebarUserName');
+            const sidebarUserLevel = document.getElementById('sidebarUserLevel');
+            const sidebarUserInitial = document.getElementById('sidebarUserInitial');
+            
+            if (sidebarUserName) sidebarUserName.textContent = currentUser.nama || 'Nama Siswa';
+            if (sidebarUserLevel) sidebarUserLevel.textContent = (currentUser.kelas || '') + ' ' + (currentUser.jurusan || '') || 'Kelas';
+            if (sidebarUserInitial) sidebarUserInitial.textContent = initial;
+            
+            // Mobile user initial (jika masih ada)
+            const mobileUserInitial = document.getElementById('mobileUserInitial');
+            if (mobileUserInitial) mobileUserInitial.textContent = initial;
+        }
+        
         // Inisialisasi
         initSupabase();
         checkSession('siswa');
+        
+        // PENTING: Secara eksplisit muat dashboard siswa
+        // Mengatasi masalah: main.js memanggil loadPage sebelum di-override,
+        // sehingga default-nya memuat dashboard admin
+        loadPage('dashboardSiswa');
+        
+        // Perbarui info user di header setelah data tersedia
+        setTimeout(function() {
+            updateUserHeaderInfo();
+        }, 500);
+        
+        // Cek lagi setelah 1.5 detik untuk memastikan
+        setTimeout(function() {
+            updateUserHeaderInfo();
+        }, 1500);
     </script>
 </body>
 </html>
