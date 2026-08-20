@@ -546,10 +546,14 @@ async function loadMasterSiswa() {
         <div id="modalSiswa" class="fixed inset-0 z-[9997] hidden">
             <div class="modal-overlay absolute inset-0" onclick="closeModalSiswa()"></div>
             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container-lowest rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-                <div class="p-6 border-b flex items-center justify-between sticky top-0 bg-surface-container-lowest z-10">
-                    <h3 class="font-headline-sm text-on-surface" id="modalSiswaTitle">Tambah Siswa Baru</h3>
-                    <button onclick="closeModalSiswa()" class="p-2 rounded-lg hover:bg-surface-container-highest">
-                        <span class="material-symbols-outlined text-on-surface-variant">close</span>
+                <div class="p-6 border-b flex items-center justify-between sticky top-0 z-10" 
+                     style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
+                    <h3 class="font-headline-sm font-bold flex items-center gap-2" style="color: white;">
+                        <span class="material-symbols-outlined" style="color: white;">person_add</span>
+                        <span id="modalSiswaTitle">Tambah Siswa Baru</span>
+                    </h3>
+                    <button onclick="closeModalSiswa()" class="p-2 rounded-lg hover:bg-white/10 transition-colors">
+                        <span class="material-symbols-outlined" style="color: white;">close</span>
                     </button>
                 </div>
                 <form id="formSiswa" onsubmit="event.preventDefault(); simpanDataSiswa();" class="p-6 space-y-4">
@@ -834,11 +838,15 @@ async function loadMasterMapel() {
         
         <div id="modalMapel" class="fixed inset-0 z-[9997] hidden">
             <div class="modal-overlay absolute inset-0" onclick="closeModalMapel()"></div>
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container-lowest rounded-xl shadow-xl max-w-xl w-full mx-4">
-                <div class="p-6 border-b flex items-center justify-between">
-                    <h3 class="font-headline-sm text-on-surface" id="modalMapelTitle">Tambah Mata Pelajaran</h3>
-                    <button onclick="closeModalMapel()" class="p-2 rounded-lg hover:bg-surface-container-highest">
-                        <span class="material-symbols-outlined text-on-surface-variant">close</span>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container-lowest rounded-xl shadow-xl max-w-xl w-full mx-4 overflow-hidden">
+                <div class="p-6 border-b flex items-center justify-between" 
+                     style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
+                    <h3 class="font-headline-sm font-bold flex items-center gap-2" style="color: white;">
+                        <span class="material-symbols-outlined" style="color: white;">menu_book</span>
+                        <span id="modalMapelTitle">Tambah Mata Pelajaran</span>
+                    </h3>
+                    <button onclick="closeModalMapel()" class="p-2 rounded-lg hover:bg-white/10 transition-colors">
+                        <span class="material-symbols-outlined" style="color: white;">close</span>
                     </button>
                 </div>
                 <form id="formMapel" onsubmit="event.preventDefault(); simpanDataMapel();" class="p-6 space-y-4">
@@ -1105,10 +1113,14 @@ async function loadMasterJadwal() {
         <div id="modalJadwal" class="fixed inset-0 z-[9997] hidden">
             <div class="modal-overlay absolute inset-0" onclick="closeModalJadwal()"></div>
             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container-lowest rounded-xl shadow-xl max-w-xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-                <div class="p-6 border-b flex items-center justify-between sticky top-0 bg-surface-container-lowest z-10">
-                    <h3 class="font-headline-sm text-on-surface" id="modalJadwalTitle">Tambah Jadwal</h3>
-                    <button onclick="closeModalJadwal()" class="p-2 rounded-lg hover:bg-surface-container-highest">
-                        <span class="material-symbols-outlined text-on-surface-variant">close</span>
+                <div class="p-6 border-b flex items-center justify-between sticky top-0 z-10" 
+                     style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
+                    <h3 class="font-headline-sm font-bold flex items-center gap-2" style="color: white;">
+                        <span class="material-symbols-outlined" style="color: white;">calendar_month</span>
+                        <span id="modalJadwalTitle">Tambah Jadwal</span>
+                    </h3>
+                    <button onclick="closeModalJadwal()" class="p-2 rounded-lg hover:bg-white/10 transition-colors">
+                        <span class="material-symbols-outlined" style="color: white;">close</span>
                     </button>
                 </div>
                 <form id="formJadwal" onsubmit="event.preventDefault(); simpanDataJadwal();" class="p-6 space-y-4">
@@ -1359,8 +1371,8 @@ async function loadQRGenerator() {
             
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
                 <section class="lg:col-span-4 flex flex-col gap-gutter">
-                    <div class="bg-surface-container-lowest rounded-xl p-container-padding shadow-sm border border-outline-variant/30 relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-bl-full -mr-8 -mt-8"></div>
+                    <div class="bg-surface-container-lowest rounded-xl p-container-padding shadow-sm border border-outline-variant/30 relative overflow-hidden group transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform duration-300 group-hover:scale-110"></div>
                         <div class="flex items-center justify-center gap-2 mb-stack-md relative z-10">
                             <span class="material-symbols-outlined text-red-500 text-[28px]">vpn_key</span>
                             <h2 class="font-headline-sm text-headline-sm text-red-500">Status Kredensial</h2>
@@ -1378,7 +1390,7 @@ async function loadQRGenerator() {
                             </button>
                         </div>
                     </div>
-                    <div class="bg-surface-container-lowest rounded-xl p-container-padding shadow-sm border border-outline-variant/30 relative overflow-hidden group flex-1 flex flex-col justify-center">
+                    <div class="bg-surface-container-lowest rounded-xl p-container-padding shadow-sm border border-outline-variant/30 relative overflow-hidden group flex-1 flex flex-col justify-center transition-all duration-300 hover:shadow-md hover:-translate-y-1">
                         <div class="absolute top-0 right-0 w-32 h-32 bg-green-500/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
                         <div class="flex items-center justify-center gap-2 mb-stack-md relative z-10">
                             <span class="material-symbols-outlined text-green-600 text-[28px]">check_circle</span>
@@ -2718,23 +2730,23 @@ async function loadRekapAbsen() {
             </header>
             
             <div class="grid grid-cols-2 md:grid-cols-4 gap-gutter mb-stack-md">
-                <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-20 h-20 bg-green-500/10 rounded-bl-full -mr-4 -mt-4"></div>
+                <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden group transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+                    <div class="absolute top-0 right-0 w-20 h-20 bg-green-500/10 rounded-bl-full -mr-4 -mt-4 transition-transform duration-300 group-hover:scale-125"></div>
                     <p class="font-label-md text-on-surface-variant uppercase tracking-wide text-xs mb-2">Rata-rata Hadir</p>
                     <p class="text-3xl font-bold text-on-surface tracking-tighter" id="statRataHadir">-%</p>
                 </div>
-                <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 rounded-bl-full -mr-4 -mt-4"></div>
+                <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden group transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+                    <div class="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 rounded-bl-full -mr-4 -mt-4 transition-transform duration-300 group-hover:scale-125"></div>
                     <p class="font-label-md text-on-surface-variant uppercase tracking-wide text-xs mb-2">Rata-rata Terlambat</p>
                     <p class="text-3xl font-bold text-on-surface tracking-tighter" id="statRataTerlambat">-%</p>
                 </div>
-                <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-bl-full -mr-4 -mt-4"></div>
+                <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden group transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+                    <div class="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-bl-full -mr-4 -mt-4 transition-transform duration-300 group-hover:scale-125"></div>
                     <p class="font-label-md text-on-surface-variant uppercase tracking-wide text-xs mb-2">Total Sakit/Izin</p>
                     <p class="text-3xl font-bold text-on-surface tracking-tighter" id="statTotalSakit">-</p>
                 </div>
-                <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-20 h-20 bg-error/10 rounded-bl-full -mr-4 -mt-4"></div>
+                <div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/30 relative overflow-hidden group transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+                    <div class="absolute top-0 right-0 w-20 h-20 bg-error/10 rounded-bl-full -mr-4 -mt-4 transition-transform duration-300 group-hover:scale-125"></div>
                     <p class="font-label-md text-on-surface-variant uppercase tracking-wide text-xs mb-2">Total Alpa</p>
                     <p class="text-3xl font-bold text-on-surface tracking-tighter" id="statTotalAlpa">-</p>
                 </div>
@@ -3029,11 +3041,29 @@ async function loadPengaturan() {
                                     <input type="text" id="npsnSekolah" value="${pengaturan.NPSN || ''}" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5"></div>
                                 <div><label class="block mb-2 font-label-md">Tingkat Sekolah</label>
                                     <select id="tingkatSekolah" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5">
-                                        <option value="SMP">SMP</option>
-                                        <option value="SMA">SMA</option>
-                                        <option value="SMK" selected>SMK</option>
-                                        <option value="MA">MA</option>
+                                        <option value="SD" ${pengaturan.Tingkat_Sekolah === 'SD' ? 'selected' : ''}>SD</option>
+                                        <option value="SMP" ${pengaturan.Tingkat_Sekolah === 'SMP' ? 'selected' : ''}>SMP</option>
+                                        <option value="SMA" ${pengaturan.Tingkat_Sekolah === 'SMA' ? 'selected' : ''}>SMA</option>
+                                        <option value="SMK" ${pengaturan.Tingkat_Sekolah === 'SMK' || !pengaturan.Tingkat_Sekolah ? 'selected' : ''}>SMK</option>
+                                        <option value="MI" ${pengaturan.Tingkat_Sekolah === 'MI' ? 'selected' : ''}>MI</option>
+                                        <option value="MTS" ${pengaturan.Tingkat_Sekolah === 'MTS' ? 'selected' : ''}>MTS</option>
+                                        <option value="MA" ${pengaturan.Tingkat_Sekolah === 'MA' ? 'selected' : ''}>MA</option>
                                     </select></div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div><label class="block mb-2 font-label-md">Status Sekolah</label>
+                                    <select id="statusSekolah" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5">
+                                        <option value="Negeri" ${pengaturan.Status_Sekolah === 'Negeri' || !pengaturan.Status_Sekolah ? 'selected' : ''}>Negeri</option>
+                                        <option value="Swasta" ${pengaturan.Status_Sekolah === 'Swasta' ? 'selected' : ''}>Swasta</option>
+                                    </select></div>
+                                <div><label class="block mb-2 font-label-md">Email Sekolah</label>
+                                    <input type="email" id="emailSekolah" value="${pengaturan.Email_Sekolah || ''}" placeholder="contoh@email.sch.id" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5"></div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div><label class="block mb-2 font-label-md">Website</label>
+                                    <input type="text" id="websiteSekolah" value="${pengaturan.Website || ''}" placeholder="https://www.sekolah.sch.id" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5"></div>
+                                <div><label class="block mb-2 font-label-md">Kontak / Telepon</label>
+                                    <input type="text" id="kontakSekolah" value="${pengaturan.Kontak || ''}" placeholder="(021) 1234567" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5"></div>
                             </div>
                             <div><label class="block mb-2 font-label-md">Alamat Lengkap</label>
                                 <textarea id="alamatSekolah" rows="3" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5 resize-none">${pengaturan.Alamat || ''}</textarea></div>
@@ -3251,6 +3281,11 @@ async function simpanPengaturanSekolah() {
         const data = [
             { pengaturan: 'Nama_Sekolah', nilai: document.getElementById('namaSekolah').value },
             { pengaturan: 'NPSN', nilai: document.getElementById('npsnSekolah').value },
+            { pengaturan: 'Tingkat_Sekolah', nilai: document.getElementById('tingkatSekolah').value },
+            { pengaturan: 'Status_Sekolah', nilai: document.getElementById('statusSekolah').value },
+            { pengaturan: 'Email_Sekolah', nilai: document.getElementById('emailSekolah').value },
+            { pengaturan: 'Website', nilai: document.getElementById('websiteSekolah').value },
+            { pengaturan: 'Kontak', nilai: document.getElementById('kontakSekolah').value },
             { pengaturan: 'Alamat', nilai: document.getElementById('alamatSekolah').value }
         ];
         
