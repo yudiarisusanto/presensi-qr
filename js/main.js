@@ -1057,7 +1057,7 @@ async function loadMasterJadwal() {
             <div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-surface-container-highest mb-stack-md flex flex-col md:flex-row gap-4 items-center">
                 <div class="relative w-full md:w-64 mb-2 md:mb-0">
                     <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
-                    <input type="text" id="searchJadwal" placeholder="Cari mata pelajaran..." oninput="filterJadwal()"
+                    <input type="text" id="searchJadwal" placeholder="Cari mata pelajaran..." oninput="jadwalPage=1;filterJadwal()"
                         class="w-full pl-10 pr-4 py-2 bg-surface border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container">
                 </div>
                 <div class="flex gap-2 w-full md:w-auto flex-wrap justify-center md:justify-start">
@@ -1209,7 +1209,6 @@ function filterJadwal() {
         return matchSearch && matchKelas && matchHari;
     });
     
-    jadwalPage = 1; // Reset ke halaman 1 saat filter berubah
     renderJadwalTable(filtered);
 }
 
