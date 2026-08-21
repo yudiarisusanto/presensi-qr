@@ -82,6 +82,30 @@ function executeModalConfirm() {
 
 let currentPage = 'dashboardAdmin';
 
+// Variabel global nama sekolah (default: SMK Negeri 1)
+let namaSekolah = 'SMK Negeri 1';
+
+// Fungsi: Memuat nama sekolah dari pengaturan_sistem
+async function loadNamaSekolah() {
+    try {
+        const sb = getSupabase();
+        if (!sb) return namaSekolah;
+        const { data } = await sb.from('pengaturan_sistem').select('nilai').eq('pengaturan', 'Nama_Sekolah').single();
+        if (data && data.nilai && data.nilai.trim()) {
+            namaSekolah = data.nilai.trim();
+        }
+    } catch(e) {}
+    return namaSekolah;
+}
+
+// Fungsi: Update tampilan nama sekolah di sidebar & tempat lain
+function updateTampilanNamaSekolah() {
+    const elLevel = document.getElementById('sidebarUserLevel');
+    if (elLevel && currentUser && currentUser.level === 'admin') {
+        elLevel.textContent = namaSekolah;
+    }
+}
+
 function loadPage(pageName) {
     currentPage = pageName;
     
@@ -1344,6 +1368,9 @@ const qrPerPage = 10;
 async function loadQRGenerator() {
     const contentArea = document.getElementById('content-area');
     
+    // Pastikan nama sekolah terbaru dimuat
+    await loadNamaSekolah();
+    
     let siswaData = [];
     let countBelum = 0, countAktif = 0;
     
@@ -1450,7 +1477,7 @@ async function loadQRGenerator() {
                                         <div class="absolute top-0 left-0 w-full h-20 bg-primary"></div>
                                         <div class="absolute top-16 left-0 w-full h-4 bg-secondary-fixed"></div>
                                         <div class="relative z-10 flex flex-col items-center w-full px-4">
-                                            <h3 class="text-white font-bold text-xs mb-3 tracking-wide text-center">KARTU ABSENSI DIGITAL<br><span class="text-[9px] font-normal">SMK NEGERI 1</span></h3>
+                                            <h3 class="text-white font-bold text-xs mb-3 tracking-wide text-center">KARTU ABSENSI DIGITAL<br><span class="text-[9px] font-normal">${namaSekolah.toUpperCase()}</span></h3>
                                             <div class="w-20 h-24 bg-gray-200 border-2 border-white shadow-sm mb-3 flex items-center justify-center">
                                                 <span class="material-symbols-outlined text-gray-400 text-4xl">person</span>
                                             </div>
@@ -1845,12 +1872,12 @@ function previewKartuSiswa(nama, nisn, kelas) {
             .card-footer{background:#f8fafa;padding:12px;text-align:center;font-size:10px;color:#999}
         </style></head><body>
             <div class="card" id="kartuAbsen">
-                <div class="card-header"><h2>KARTU ABSENSI DIGITAL</h2><p style="margin:4px 0 0;font-size:10px;opacity:0.8">SMK NEGERI 1</p></div>
+                <div class="card-header"><h2>KARTU ABSENSI DIGITAL</h2><p style="margin:4px 0 0;font-size:10px;opacity:0.8">${namaSekolah.toUpperCase()}</p></div>
                 <div class="card-body">
                     <img src="${qrUrl}" alt="QR" crossorigin="anonymous">
                     <h3>${nama}</h3><p>NISN: ${nisn}</p><p>${kelas}</p>
                 </div>
-                <div class="card-footer">PresensiQR © 2024</div>
+                <div class="card-footer">PresensiQR © 2026</div>
             </div>
             <button class="download-btn" id="downloadBtn" onclick="downloadKartu()">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -2407,7 +2434,7 @@ function loadProfilPengguna() {
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-on-surface-variant font-label-md">Instansi</span>
-                                <span class="text-on-surface font-body-md">SMK Negeri 1</span>
+                                <span class="text-on-surface font-body-md">${namaSekolah}</span>
                             </div>
                         </div>
                         <div class="w-full border-t border-outline-variant pt-stack-md">
@@ -3292,6 +3319,11 @@ async function simpanPengaturanSekolah() {
             await sb.from('pengaturan_sistem').upsert(item, { onConflict: 'pengaturan' });
         }
         
+        // Update variabel global nama sekolah secara langsung
+        namaSekolah = document.getElementById('namaSekolah').value || namaSekolah;
+        // Update tampilan di sidebar
+        updateTampilanNamaSekolah();
+        
         hideLoading();
         showToast('Pengaturan sekolah disimpan!', 'success');
     } catch (e) {
@@ -3356,12 +3388,15 @@ async function simpanPengaturanSistem() {
 // INISIALISASI SAAT HALAMAN DIMUAT
 // ============================================================
 
-(function() {
+(async function() {
     const contentArea = document.getElementById('content-area');
     if (!contentArea) {
         console.log('Bukan halaman dashboard, inisialisasi main.js dilewati.');
         return;
     }
+    
+    // Muat nama sekolah dari database terlebih dahulu
+    await loadNamaSekolah();
     
     if (currentUser) {
         const initial = getInitial(currentUser.nama);
@@ -3372,7 +3407,7 @@ async function simpanPengaturanSistem() {
         
         if (elInitial) elInitial.textContent = initial;
         if (elName) elName.textContent = currentUser.nama;
-        if (elLevel) elLevel.textContent = currentUser.level === 'admin' ? 'Administrator' : `${currentUser.kelas} ${currentUser.jurusan}`;
+        if (elLevel) elLevel.textContent = currentUser.level === 'admin' ? namaSekolah : `${currentUser.kelas} ${currentUser.jurusan}`;
         if (elMobileInitial) elMobileInitial.textContent = initial;
         
         document.querySelectorAll('.admin-menu').forEach(el => {
