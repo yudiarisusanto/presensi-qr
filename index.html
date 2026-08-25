@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PresensiQR - Login</title>
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Tailwind Config (SAMA PERSIS dengan desain asli) -->
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#004349",
+                        "primary-container": "#0d5c63",
+                        "primary-fixed": "#abeef6",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#002023",
+                        "on-primary-container": "#90d2da",
+                        "on-primary-fixed-variant": "#004f55",
+                        
+                        "secondary": "#48626e",
+                        "secondary-container": "#cbe7f5",
+                        "secondary-fixed": "#cbe7f5",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed": "#021f29",
+                        
+                        "tertiary": "#5c310d",
+                        "tertiary-container": "#784722",
+                        "tertiary-fixed": "#ffdcc6",
+                        "on-tertiary": "#ffffff",
+                        
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        
+                        "background": "#f8fafa",
+                        "surface": "#f8fafa",
+                        "surface-bright": "#f8fafa",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f2f4f4",
+                        "surface-container": "#eceeee",
+                        "surface-container-high": "#e6e8e8",
+                        "surface-container-highest": "#e1e3e3",
+                        "surface-variant": "#e1e3e3",
+                        
+                        "on-background": "#191c1d",
+                        "on-surface": "#191c1d",
+                        "on-surface-variant": "#3f484a",
+                        
+                        "outline": "#6f797a",
+                        "outline-variant": "#bfc8c9",
+                        
+                        "inverse-surface": "#2e3131",
+                        "inverse-on-surface": "#eff1f1",
+                        "inverse-primary": "#8fd1d9"
+                    },
+                    spacing: {
+                        "stack-lg": "32px",
+                        "gutter": "16px",
+                        "container-padding": "24px",
+                        "stack-md": "16px",
+                        "base": "8px",
+                        "stack-sm": "8px"
+                    },
+                    fontFamily: {
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    fontSize: {
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen">
+    
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-white/80 z-[9999] flex items-center justify-center hidden">
+        <div class="text-center">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="text-on-surface-variant font-label-md" id="loadingText">Memuat...</p>
+        </div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-[9998] space-y-2"></div>
+    
+    <!-- Modal Konfirmasi -->
+    <div id="modalConfirm" class="fixed inset-0 z-[9997] hidden">
+        <div class="modal-overlay absolute inset-0" onclick="closeModalConfirm()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container-lowest rounded-xl p-6 shadow-xl max-w-md w-full mx-4">
+            <div class="flex items-start gap-4 mb-4">
+                <div class="w-12 h-12 rounded-full bg-error-container flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-error">warning</span>
+                </div>
+                <div>
+                    <h3 class="font-headline-sm text-on-surface mb-2" id="modalConfirmTitle">Konfirmasi</h3>
+                    <p class="font-body-md text-on-surface-variant" id="modalConfirmMessage">Apakah Anda yakin?</p>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModalConfirm()" class="px-4 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest">Batal</button>
+                <button id="modalConfirmBtn" onclick="executeModalConfirm()" class="px-4 py-2 rounded-lg bg-primary text-on-primary hover:opacity-90">Ya</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- HALAMAN LOGIN -->
+    <div class="login-bg min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+        <!-- Decorative Elements - Lingkaran Besar -->
+        <div class="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+        <div class="absolute bottom-0 left-0 w-64 h-64 bg-secondary-container/50 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+        <div class="absolute top-1/4 left-1/4 w-32 h-32 bg-tertiary-fixed/30 rounded-full"></div>
+        
+        <div class="relative z-10 w-full max-w-md">
+            <!-- Logo & Brand -->
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary shadow-lg mb-4">
+                    <span class="material-symbols-outlined text-on-primary text-5xl" style="font-variation-settings: 'FILL' 1;">qr_code_scanner</span>
+                </div>
+                <h1 class="font-headline-lg text-headline-lg text-primary mb-2">PresensiQR</h1>
+                <p class="font-body-lg text-body-lg text-on-surface-variant">Sistem Absensi Digital Berbasis QR Code</p>
+            </div>
+            
+            <!-- Login Card -->
+            <div class="card-glass rounded-2xl shadow-xl p-8 border border-white/50">
+                <h2 class="font-headline-md text-headline-md text-on-surface mb-2">Masuk ke Sistem</h2>
+                <p class="font-body-md text-body-md text-on-surface-variant mb-6">Silakan masukkan kredensial Anda</p>
+                
+                <form onsubmit="event.preventDefault(); doLogin();">
+                    <!-- Username -->
+                    <div class="mb-4">
+                        <label class="block font-label-md text-label-md text-on-surface-variant mb-2">Username (NISN/NIP)</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">person</span>
+                            <input type="text" id="username" placeholder="Masukkan username..."
+                                class="w-full bg-surface-bright border border-outline-variant rounded-lg pl-10 pr-4 py-3 font-body-md focus:outline-none focus:ring-2 focus:ring-primary-container focus:border-primary"
+                                autocomplete="username">
+                        </div>
+                    </div>
+                    
+                    <!-- Password -->
+                    <div class="mb-4">
+                        <label class="block font-label-md text-label-md text-on-surface-variant mb-2">Password</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">lock</span>
+                            <input type="password" id="password" placeholder="Masukkan password..."
+                                class="w-full bg-surface-bright border border-outline-variant rounded-lg pl-10 pr-12 py-3 font-body-md focus:outline-none focus:ring-2 focus:ring-primary-container focus:border-primary"
+                                autocomplete="current-password">
+                            <button type="button" onclick="togglePassword()"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-primary">
+                                <span class="material-symbols-outlined" id="passwordIcon">visibility_off</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Remember & Forgot -->
+                    <div class="flex items-center justify-between mb-6">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary bg-surface-container-lowest">
+                            <span class="font-body-md text-on-surface-variant">Ingat Saya</span>
+                        </label>
+                        <a href="#" class="font-body-md text-primary hover:underline">Lupa Password?</a>
+                    </div>
+                    
+                    <!-- Login Button -->
+                    <button type="submit"
+                        class="w-full bg-primary text-on-primary rounded-lg py-3 font-label-md hover:bg-on-primary-fixed-variant shadow-md hover:shadow-lg active:scale-[0.98] flex items-center justify-center gap-2 transition-all">
+                        <span>Masuk</span>
+                        <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    </button>
+                </form>
+                
+            </div>
+            
+            <!-- Footer -->
+            <p class="text-center mt-8 font-label-md text-label-md text-outline">
+                © 2026 PresensiQR - Sistem Absensi Digital Sekolah
+            </p>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/main.js"></script>
+    
+    <script>
+        // Inisialisasi Supabase saat halaman dimuat
+        initSupabase();
+        
+        // Toggle password visibility
+        function togglePassword() {
+            const input = document.getElementById('password');
+            const icon = document.getElementById('passwordIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.textContent = 'visibility';
+            } else {
+                input.type = 'password';
+                icon.textContent = 'visibility_off';
+            }
+        }
+        
+        // Cek jika sudah login
+        (function() {
+            const stored = localStorage.getItem('presensiQR_user');
+            if (stored) {
+                try {
+                    const user = JSON.parse(stored);
+                    if (user.level === 'admin') {
+                        window.location.href = 'dashboard-admin.html';
+                    } else {
+                        window.location.href = 'dashboard-siswa.html';
+                    }
+                } catch(e) {}
+            }
+        })();
+    </script>
+</body>
+</html>
