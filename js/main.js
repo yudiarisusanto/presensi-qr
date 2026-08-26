@@ -3933,7 +3933,7 @@ async function simpanDataExcelKeDatabase() {
                                 password: siswa.nisn,
                                 level: 'siswa',
                                 id_referensi: siswaBaru.id,
-                                status: 'Nonaktif'
+                                status: 'Belum Generate'
                             });
                             if (errUser) {
                                 console.error('❌ Error insert user:', siswa.nisn, errUser);
@@ -3941,7 +3941,7 @@ async function simpanDataExcelKeDatabase() {
                             }
                         } else {
                             await sb.from('users')
-                                .update({ id_referensi: siswaBaru.id, status: 'Nonaktif', level: 'siswa' })
+                                .update({ id_referensi: siswaBaru.id, status: 'Belum Generate', level: 'siswa' })
                                 .eq('id', cekUser.id);
                         }
                         
