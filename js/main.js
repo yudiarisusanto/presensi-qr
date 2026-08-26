@@ -3729,7 +3729,7 @@ function tampilkanPreviewExcel(data) {
             <div class="px-6 py-4 border-b border-outline-variant/30 flex justify-between items-center">
                 <div>
                     <h3 class="font-headline-sm text-on-surface">Preview Data Siswa</h3>
-                    <p class="text-sm text-on-surface-variant mt-1">Total: <strong>${data.length}</strong> data siswa • Status: <span class="text-amber-600 font-bold">NONAKTIF</span> (akan aktif saat QR di-generate)</p>
+                    <p class="text-sm text-on-surface-variant mt-1">Total: <strong>${data.length}</strong> data siswa • Status: <span class="text-amber-600 font-bold">BELUM GENERATE</span> (akan aktif saat QR di-generate)</p>
                 </div>
                 <button onclick="tutupPreviewExcel()" class="text-on-surface-variant hover:text-on-surface">
                     <span class="material-symbols-outlined">close</span>
@@ -3796,7 +3796,7 @@ async function simpanDataExcelKeDatabase() {
     }
     
     showModalConfirm('Konfirmasi Upload', 
-        'Anda akan mengupload ' + dataExcelSiswa.length + ' data siswa.\n\n⚠️ Akun siswa akan berstatus NONAKTIF dan akan AKTIF otomatis saat QR Code di-generate di menu QR Generator.\n\nLanjutkan?', 
+        'Anda akan mengupload ' + dataExcelSiswa.length + ' data siswa.\n\n⚠️ Akun siswa akan berstatus "BELUM GENERATE" dan akan AKTIF otomatis saat QR Code di-generate di menu QR Generator.\n\nLanjutkan?', 
         async function() {
             tutupPreviewExcel();
             showLoading('Menyimpan ' + dataExcelSiswa.length + ' data siswa... (0/' + dataExcelSiswa.length + ')');
@@ -3901,10 +3901,11 @@ async function simpanDataExcelKeDatabase() {
                             tanggal_lahir: siswa.tanggal_lahir && siswa.tanggal_lahir.trim() ? siswa.tanggal_lahir.trim() : null,
                             kelas: siswa.kelas,
                             jurusan: siswa.jurusan,
-                            status_akun: 'Nonaktif'
+                            status_akun: 'Belum Generate'
                         };
                         
                         console.log('📝 Inserting:', siswa.nisn, '-', siswa.nama_lengkap);
+                        console.log('   📦 Data:', JSON.stringify(dataSiswa));
                         
                         const { data: siswaBaru, error: errSiswa } = await sb
                             .from('siswa')
