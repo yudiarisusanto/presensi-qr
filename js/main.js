@@ -692,7 +692,7 @@ function renderSiswaTable(data) {
             <td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${statusWarna}">${s.status_akun}</span></td>
             <td class="p-3 text-center">
                 <button onclick="editSiswa(${s.id})" class="p-1.5 text-primary hover:bg-primary/10 rounded"><span class="material-symbols-outlined text-[18px]">edit</span></button>
-                <button onclick="hapusSiswa(${s.id}, '${s.nama_lengkap.replace(/'/g, "&#39;")}')" class="p-1.5 text-error hover:bg-error/10 rounded"><span class="material-symbols-outlined text-[18px]">delete</span></button>
+                <button onclick="hapusSiswa(${s.id}, '${encodeURIComponent(s.nama_lengkap)}')" class="p-1.5 text-error hover:bg-error/10 rounded"><span class="material-symbols-outlined text-[18px]">delete</span></button>
             </td>
         </tr>`;
     }).join('');
@@ -778,15 +778,15 @@ async function simpanDataSiswa() {
 }
 
 function hapusSiswa(id, nama) {
-    // Decode HTML entity (misal: &#39; menjadi ') agar tampilan benar
-    const namaDecode = nama.replace(/&#39;/g, "'");
+    // Decode nama yang di-encode dengan encodeURIComponent
+    const namaDecode = decodeURIComponent(nama);
     showModalConfirm('Hapus Siswa', `Apakah Anda yakin menghapus ${namaDecode}?`, async () => {
         try {
             const sb = getSupabase();
             await sb.from('siswa').delete().eq('id', id);
             showToast('Data siswa dihapus', 'success');
             await loadAllSiswa();
-            catatLog(currentUser.username, 'Hapus Siswa', nama);
+            catatLog(currentUser.username, 'Hapus Siswa', namaDecode);
         } catch (e) {
             showToast('Gagal: ' + e.message, 'error');
         }
@@ -957,7 +957,7 @@ function renderMapelTable(data) {
             <td class="p-4">${m.kelas}</td>
             <td class="p-4 text-center">
                 <button onclick="editMapel(${m.id})" class="p-1.5 text-primary hover:bg-primary/10 rounded"><span class="material-symbols-outlined text-[18px]">edit</span></button>
-                <button onclick="hapusMapel(${m.id}, '${m.nama_mata_pelajaran.replace(/'/g, "&#39;")}')" class="p-1.5 text-error hover:bg-error/10 rounded"><span class="material-symbols-outlined text-[18px]">delete</span></button>
+                <button onclick="hapusMapel(${m.id}, '${encodeURIComponent(m.nama_mata_pelajaran)}')" class="p-1.5 text-error hover:bg-error/10 rounded"><span class="material-symbols-outlined text-[18px]">delete</span></button>
             </td>
         </tr>
     `).join('');
@@ -1685,10 +1685,10 @@ function renderQRTable(data) {
             <td class="p-3">${s.kelas} ${s.jurusan}</td>
             <td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${statusWarna}">${s.status_akun}</span></td>
             <td class="p-3 text-center">
-                <button onclick="editStatusAkunSiswa(${s.id}, '${s.nama_lengkap.replace(/'/g, "&#39;")}', '${s.status_akun}')" class="p-1.5 text-primary hover:bg-primary/10 rounded" title="Edit Status Akun">
+                <button onclick="editStatusAkunSiswa(${s.id}, '${encodeURIComponent(s.nama_lengkap)}', '${s.status_akun}')" class="p-1.5 text-primary hover:bg-primary/10 rounded" title="Edit Status Akun">
                     <span class="material-symbols-outlined text-[18px]">edit</span>
                 </button>
-                <button onclick="generateKartuIndividu('${s.nama_lengkap.replace(/'/g, "&#39;")}', '${s.nisn}', '${s.kelas} ${s.jurusan}')" class="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Download Kartu">
+                <button onclick="generateKartuIndividu('${encodeURIComponent(s.nama_lengkap)}', '${s.nisn}', '${s.kelas} ${s.jurusan}')" class="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Download Kartu">
                     <span class="material-symbols-outlined text-[18px]">download</span>
                 </button>
             </td>
@@ -1749,8 +1749,8 @@ function filterSiswaQR() {
 // FUNGSI: Edit Status Akun Siswa (Popup Modal)
 // ============================================================
 function editStatusAkunSiswa(id, nama, statusAkun) {
-    // Decode HTML entity agar nama tampil benar (jika ada tanda kutip satu)
-    const namaDecode = nama.replace(/&#39;/g, "'");
+    // Decode nama yang di-encode dengan encodeURIComponent
+    const namaDecode = decodeURIComponent(nama);
     // Buat modal secara dinamis
     const modalHtml = `
         <div id="modalEditStatus" class="fixed inset-0 z-[9998] flex items-center justify-center">
@@ -1765,7 +1765,7 @@ function editStatusAkunSiswa(id, nama, statusAkun) {
                 <div class="p-6 space-y-4">
                     <div>
                         <label class="block mb-2 font-label-md text-on-surface-variant">Nama Siswa</label>
-                        <input type="text" value="${nama}" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5 text-on-surface font-semibold" readonly>
+                        <input type="text" value="${namaDecode}" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5 text-on-surface font-semibold" readonly>
                     </div>
                     <div>
                         <label class="block mb-2 font-label-md text-on-surface-variant">Status Akun</label>
@@ -1927,8 +1927,8 @@ function previewKartuSiswa(nama, nisn, kelas) {
 }
 
 function generateKartuIndividu(nama, nisn, kelas) {
-    // Decode HTML entity agar nama tampil benar (jika ada tanda kutip satu)
-    nama = nama.replace(/&#39;/g, "'");
+    // Decode nama yang di-encode dengan encodeURIComponent
+    nama = decodeURIComponent(nama);
     previewKartuSiswa(nama, nisn, kelas);
 }
 
