@@ -3655,16 +3655,36 @@ function handleFileExcel(event) {
                     }
                 }
                 
+                // Normalisasi Jenis Kelamin
+                let jk = idxJK !== -1 && baris[idxJK] ? String(baris[idxJK]).trim() : '';
+                const jkLower = jk.toLowerCase();
+                if (['l', 'laki', 'lakilaki', 'laki-laki', 'pria', 'm', 'male', '1'].includes(jkLower)) {
+                    jk = 'Laki-laki';
+                } else if (['p', 'perempuan', 'wanita', 'f', 'female', '2'].includes(jkLower)) {
+                    jk = 'Perempuan';
+                }
+                
+                // Normalisasi kelas (pastikan format romawi jika angka)
+                let kelas = String(baris[idxKelas] || '').trim();
+                const kelasMap = {'10': 'X', '11': 'XI', '12': 'XII'};
+                if (kelasMap[kelas]) kelas = kelasMap[kelas];
+                
+                // Bersihkan nama (hapus spasi berlebih, huruf kapital setiap kata)
+                const namaClean = nama.replace(/\s+/g, ' ').trim()
+                    .split(' ')
+                    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                    .join(' ');
+                
                 dataExcelSiswa.push({
-                    nama_lengkap: nama,
-                    jenis_kelamin: idxJK !== -1 && baris[idxJK] ? String(baris[idxJK]).trim() : '',
+                    nama_lengkap: namaClean,
+                    jenis_kelamin: jk,
                     nis: idxNIS !== -1 && baris[idxNIS] ? String(baris[idxNIS]).trim() : '',
                     nisn: nisnFinal,
                     nisn_asli: nisn, // simpan NISN asli (kosong jika dari template)
                     is_nisn_temp: !nisn, // flag apakah NISN digenerate sementara
                     tempat_lahir: idxTempatLahir !== -1 && baris[idxTempatLahir] ? String(baris[idxTempatLahir]).trim() : '',
                     tanggal_lahir: tglLahir,
-                    kelas: String(baris[idxKelas] || '').trim(),
+                    kelas: kelas,
                     jurusan: String(baris[idxJurusan] || '').trim()
                 });
             }
@@ -3728,6 +3748,7 @@ function tampilkanPreviewExcel(data) {
                                 <th class="px-2 py-2 text-left border-b">Tgl Lahir</th>
                                 <th class="px-2 py-2 text-left border-b">Kelas</th>
                                 <th class="px-2 py-2 text-left border-b">Jurusan</th>
+                                <th class="px-2 py-2 text-left border-b">Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -3736,11 +3757,12 @@ function tampilkanPreviewExcel(data) {
                                     <td class="px-2 py-2">${s.nama_lengkap}</td>
                                     <td class="px-2 py-2">${s.jenis_kelamin || '-'}</td>
                                     <td class="px-2 py-2 font-mono">${s.nis || '-'}</td>
-                                    <td class="px-2 py-2 font-mono">${s.is_nisn_temp ? '<span class="text-amber-600" title="NISN kosong di template, akan digenerate otomatis">⚠️ Auto</span>' : s.nisn}</td>
+                                    <td class="px-2 py-2 font-mono">${s.is_nisn_temp ? '<span class="text-amber-600" title="NISN kosong di template">⚠️ Auto-gen</span>' : s.nisn}</td>
                                     <td class="px-2 py-2">${s.tempat_lahir || '-'}</td>
                                     <td class="px-2 py-2">${s.tanggal_lahir || '-'}</td>
                                     <td class="px-2 py-2">${s.kelas}</td>
                                     <td class="px-2 py-2">${s.jurusan}</td>
+                                    <td class="px-2 py-2">${s.is_nisn_temp ? '<span class="text-amber-600 text-xs">⚠️ NISN perlu diisi</span>' : '<span class="text-green-600 text-xs">✓ Siap upload</span>'}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -3766,7 +3788,7 @@ function tutupPreviewExcel() {
     if (modal) modal.classList.add('hidden');
 }
 
-// Fungsi: Simpan data Excel ke Supabase (status = Nonaktif)
+// Fungsi: Simpan data Excel ke Supabase (status = Nonaktif) - VERSI ROBUST
 async function simpanDataExcelKeDatabase() {
     if (dataExcelSiswa.length === 0) {
         showToast('Tidak ada data untuk disimpan!', 'error');
@@ -3777,41 +3799,112 @@ async function simpanDataExcelKeDatabase() {
         'Anda akan mengupload ' + dataExcelSiswa.length + ' data siswa.\n\n⚠️ Akun siswa akan berstatus NONAKTIF dan akan AKTIF otomatis saat QR Code di-generate di menu QR Generator.\n\nLanjutkan?', 
         async function() {
             tutupPreviewExcel();
-            showLoading('Menyimpan ' + dataExcelSiswa.length + ' data siswa...');
+            showLoading('Menyimpan ' + dataExcelSiswa.length + ' data siswa... (0/' + dataExcelSiswa.length + ')');
             
             try {
                 const sb = getSupabase();
+                if (!sb) {
+                    hideLoading();
+                    showToast('❌ Koneksi Supabase tidak tersedia!', 'error');
+                    return;
+                }
+                
                 let berhasil = 0;
                 let gagal = 0;
                 let pesanGagal = [];
+                let dilewati = 0;
                 
-                for (const siswa of dataExcelSiswa) {
+                // Pre-fetch semua NISN dan nama yang sudah ada di database untuk cek cepat
+                console.log('🔍 Mengambil data existing untuk pengecekan duplikat...');
+                const { data: existingSiswa, error: errExisting } = await sb
+                    .from('siswa')
+                    .select('id, nisn, nama_lengkap');
+                
+                const existingNISN = new Set();
+                const existingNama = new Map();
+                
+                if (existingSiswa && !errExisting) {
+                    existingSiswa.forEach(s => {
+                        existingNISN.add(s.nisn);
+                        existingNama.set(s.nama_lengkap.toLowerCase().trim(), s.nisn);
+                    });
+                    console.log(`📊 Data existing: ${existingSiswa.length} siswa di database`);
+                }
+                
+                for (let i = 0; i < dataExcelSiswa.length; i++) {
+                    const siswa = dataExcelSiswa[i];
+                    
+                    // Update progress loading
+                    if ((i + 1) % 10 === 0 || i === dataExcelSiswa.length - 1) {
+                        const loadingText = document.getElementById('loadingText');
+                        if (loadingText) {
+                            loadingText.textContent = 'Menyimpan data... (' + (i + 1) + '/' + dataExcelSiswa.length + ') ✅' + berhasil + ' ❌' + gagal;
+                        }
+                    }
+                    
                     try {
-                        // Cek NISN duplikat (menggunakan maybeSingle agar tidak error jika belum ada)
-                        const { data: cek } = await sb
-                            .from('siswa')
-                            .select('id')
-                            .eq('nisn', siswa.nisn)
-                            .maybeSingle();
+                        // ==========================================
+                        // VALIDASI DATA SEBELUM INSERT
+                        // ==========================================
+                        const errorValidasi = [];
+                        if (!siswa.nama_lengkap || siswa.nama_lengkap.length < 2) {
+                            errorValidasi.push('Nama tidak valid');
+                        }
+                        if (!siswa.nisn || siswa.nisn.length < 3) {
+                            errorValidasi.push('NISN tidak valid');
+                        }
+                        if (!siswa.kelas) {
+                            errorValidasi.push('Kelas kosong');
+                        }
+                        if (!siswa.jurusan) {
+                            errorValidasi.push('Jurusan kosong');
+                        }
+                        if (!siswa.jenis_kelamin || !['Laki-laki', 'Perempuan'].includes(siswa.jenis_kelamin)) {
+                            errorValidasi.push('Jenis kelamin tidak valid (' + (siswa.jenis_kelamin || 'kosong') + ')');
+                        }
+                        if (siswa.tanggal_lahir && siswa.tanggal_lahir.length > 0 && !/^\d{4}-\d{2}-\d{2}$/.test(siswa.tanggal_lahir)) {
+                            errorValidasi.push('Format tanggal salah (' + siswa.tanggal_lahir + ')');
+                        }
                         
-                        if (cek) {
+                        if (errorValidasi.length > 0) {
                             gagal++;
-                            pesanGagal.push(siswa.nisn + ' - NISN sudah ada');
+                            pesanGagal.push(siswa.nisn + ' [' + siswa.nama_lengkap + '] - Validasi: ' + errorValidasi.join(', '));
                             continue;
                         }
                         
-                        // Insert data siswa dengan status_akun = "Nonaktif"
+                        // ==========================================
+                        // CEK NISN DUPLIKAT (cepat, dari cache)
+                        // ==========================================
+                        if (existingNISN.has(siswa.nisn)) {
+                            dilewati++;
+                            pesanGagal.push(siswa.nisn + ' [' + siswa.nama_lengkap + '] - NISN SUDAH ADA di database');
+                            continue;
+                        }
+                        
+                        // ==========================================
+                        // CEK NAMA DUPLIKAT (peringatan saja)
+                        // ==========================================
+                        const namaLower = siswa.nama_lengkap.toLowerCase().trim();
+                        if (existingNama.has(namaLower)) {
+                            console.log('⚠️ Peringatan: Nama "' + siswa.nama_lengkap + '" mirip dengan siswa existing (NISN: ' + existingNama.get(namaLower) + ')');
+                        }
+                        
+                        // ==========================================
+                        // INSERT DATA SISWA
+                        // ==========================================
                         const dataSiswa = {
                             nama_lengkap: siswa.nama_lengkap,
                             jenis_kelamin: siswa.jenis_kelamin,
-                            nis: siswa.nis || null,
+                            nis: siswa.nis && siswa.nis.trim() ? siswa.nis.trim() : null,
                             nisn: siswa.nisn,
-                            tempat_lahir: siswa.tempat_lahir || null,
-                            tanggal_lahir: siswa.tanggal_lahir || null,
+                            tempat_lahir: siswa.tempat_lahir && siswa.tempat_lahir.trim() ? siswa.tempat_lahir.trim() : null,
+                            tanggal_lahir: siswa.tanggal_lahir && siswa.tanggal_lahir.trim() ? siswa.tanggal_lahir.trim() : null,
                             kelas: siswa.kelas,
                             jurusan: siswa.jurusan,
                             status_akun: 'Nonaktif'
                         };
+                        
+                        console.log('📝 Inserting:', siswa.nisn, '-', siswa.nama_lengkap);
                         
                         const { data: siswaBaru, error: errSiswa } = await sb
                             .from('siswa')
@@ -3819,10 +3912,14 @@ async function simpanDataExcelKeDatabase() {
                             .select()
                             .single();
                         
-                        if (errSiswa) throw errSiswa;
+                        if (errSiswa) {
+                            console.error('❌ Error insert siswa:', siswa.nisn, errSiswa);
+                            throw errSiswa;
+                        }
                         
-                        // Buat akun user dengan status = "Nonaktif"
-                        // Cek dulu apakah username sudah ada di users
+                        // ==========================================
+                        // INSERT/UPDATE USER
+                        // ==========================================
                         const { data: cekUser } = await sb
                             .from('users')
                             .select('id')
@@ -3830,7 +3927,6 @@ async function simpanDataExcelKeDatabase() {
                             .maybeSingle();
                         
                         if (!cekUser) {
-                            // Jika belum ada, buat baru
                             const { error: errUser } = await sb.from('users').insert({
                                 username: siswa.nisn,
                                 password: siswa.nisn,
@@ -3838,36 +3934,64 @@ async function simpanDataExcelKeDatabase() {
                                 id_referensi: siswaBaru.id,
                                 status: 'Nonaktif'
                             });
-                            if (errUser) throw errUser;
+                            if (errUser) {
+                                console.error('❌ Error insert user:', siswa.nisn, errUser);
+                                throw errUser;
+                            }
                         } else {
-                            // Jika sudah ada, update id_referensi dan status
                             await sb.from('users')
                                 .update({ id_referensi: siswaBaru.id, status: 'Nonaktif', level: 'siswa' })
                                 .eq('id', cekUser.id);
                         }
                         
                         berhasil++;
+                        existingNISN.add(siswa.nisn); // Tambahkan ke cache untuk cek duplikat internal
                         
                     } catch (err) {
                         gagal++;
-                        pesanGagal.push(siswa.nisn + ' - ' + err.message);
+                        const errMsg = err.message || JSON.stringify(err);
+                        pesanGagal.push(siswa.nisn + ' [' + siswa.nama_lengkap + '] - DB: ' + errMsg);
+                        console.error('💥 Gagal memproses:', siswa.nisn, siswa.nama_lengkap, err);
                     }
                 }
                 
                 hideLoading();
                 dataExcelSiswa = [];
                 
-                let pesan = '✅ Berhasil: ' + berhasil + ' data (Status: Nonaktif)';
+                // ==========================================
+                // TAMPILKAN HASIL DETAIL
+                // ==========================================
+                let pesan = '✅ Berhasil: ' + berhasil + ' data';
+                if (dilewati > 0) pesan += ' | ⏭️ Dilewati: ' + dilewati + ' (duplikat)';
                 if (gagal > 0) pesan += ' | ❌ Gagal: ' + gagal + ' data';
+                
+                // Tampilkan 3 error pertama di console untuk debugging
+                if (pesanGagal.length > 0) {
+                    console.log('\n' + '='.repeat(60));
+                    console.log('📋 DETAIL MASALAH UPLOAD (' + pesanGagal.length + ' masalah):');
+                    console.log('='.repeat(60));
+                    pesanGagal.slice(0, 10).forEach((p, idx) => {
+                        console.log((idx + 1) + '. ' + p);
+                    });
+                    if (pesanGagal.length > 10) {
+                        console.log('...dan ' + (pesanGagal.length - 10) + ' masalah lainnya');
+                    }
+                    console.log('='.repeat(60));
+                    console.log('💡 Buka Developer Tools (F12) → Console untuk melihat detail lengkap');
+                }
+                
+                // Tampilkan error contoh di toast juga
+                if (gagal > 0 && pesanGagal.length > 0) {
+                    const contohError = pesanGagal[0].split(' - ').slice(-1)[0];
+                    setTimeout(() => {
+                        showToast('Contoh error: ' + contohError + ' (lihat F12→Console)', 'error');
+                    }, 1500);
+                }
                 
                 showToast(pesan, gagal > 0 ? 'warning' : 'success');
                 
                 if (typeof catatLog === 'function' && currentUser) {
-                    catatLog(currentUser.username, 'Upload Excel', berhasil + ' berhasil, ' + gagal + ' gagal (status: Nonaktif)');
-                }
-                
-                if (pesanGagal.length > 0) {
-                    console.log('Detail gagal:', pesanGagal);
+                    catatLog(currentUser.username, 'Upload Excel', berhasil + ' berhasil, ' + dilewati + ' dilewati, ' + gagal + ' gagal');
                 }
                 
                 if (currentPage === 'masterSiswa') {
@@ -3876,7 +4000,8 @@ async function simpanDataExcelKeDatabase() {
                 
             } catch (error) {
                 hideLoading();
-                showToast('Error: ' + error.message, 'error');
+                console.error('💥 FATAL ERROR:', error);
+                showToast('Error FATAL: ' + error.message + ' (lihat F12→Console)', 'error');
             }
         });
 }
