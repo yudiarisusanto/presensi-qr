@@ -3456,6 +3456,68 @@ function downloadTemplateSiswa() {
     }
 }
 
+// ============================================================
+// FUNGSI HELPER: Parsing tanggal format Indonesia & Internasional
+// Mendukung: 
+//   - "11 Agustus 2026", "11/08/2026", "11-08-2026", "11.08.2026" (DD/MM/YYYY)
+//   - "2026/08/11", "2026-08-11", "2026.08.11" (YYYY/MM/DD)
+//   - Format Excel serial number
+// ============================================================
+function parseTanggalIndo(str) {
+    if (!str) return null;
+    str = String(str).trim();
+    
+    const bulanMap = {
+        'januari': 0, 'jan': 0, 'jan.': 0, '1': 0, '01': 0,
+        'februari': 1, 'feb': 1, 'feb.': 1, '2': 1, '02': 1,
+        'maret': 2, 'mar': 2, 'mar.': 2, '3': 2, '03': 2,
+        'april': 3, 'apr': 3, 'apr.': 3, '4': 3, '04': 3,
+        'mei': 4, 'mey': 4, '5': 4, '05': 4,
+        'juni': 5, 'jun': 5, 'jun.': 5, '6': 5, '06': 5,
+        'juli': 6, 'jul': 6, 'jul.': 6, '7': 6, '07': 6,
+        'agustus': 7, 'agu': 7, 'agu.': 7, 'agt': 7, '8': 7, '08': 7,
+        'september': 8, 'sep': 8, 'sep.': 8, 'sept': 8, '9': 8, '09': 8,
+        'oktober': 9, 'okt': 9, 'okt.': 9, '10': 9,
+        'november': 10, 'nov': 10, 'nov.': 10, '11': 10,
+        'desember': 11, 'des': 11, 'des.': 11, '12': 11
+    };
+    
+    // Format 1: "2026/08/11" atau "2026-08-11" atau "2026.08.11" (YYYY/MM/DD)
+    let match = str.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
+    if (match) {
+        const tahun = parseInt(match[1]);
+        const bulan = parseInt(match[2]) - 1;
+        const hari = parseInt(match[3]);
+        if (hari >= 1 && hari <= 31 && bulan >= 0 && bulan <= 11 && tahun >= 1900 && tahun <= 2100) {
+            return new Date(tahun, bulan, hari);
+        }
+    }
+    
+    // Format 2: "11 Agustus 2026" atau "11-Agustus-2026"
+    match = str.match(/^(\d{1,2})[\s\-\/\.]+([a-zA-Z]+)[\s\-\/\.]+(\d{4})$/);
+    if (match) {
+        const hari = parseInt(match[1]);
+        const bulan = bulanMap[match[2].toLowerCase()];
+        const tahun = parseInt(match[3]);
+        if (bulan !== undefined && hari >= 1 && hari <= 31 && tahun >= 1900 && tahun <= 2100) {
+            return new Date(tahun, bulan, hari);
+        }
+    }
+    
+    // Format 3: "11/08/2026" atau "11-08-2026" atau "11.08.2026" (DD/MM/YYYY)
+    match = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+    if (match) {
+        const hari = parseInt(match[1]);
+        const bulan = parseInt(match[2]) - 1;
+        const tahun = parseInt(match[3]);
+        if (hari >= 1 && hari <= 31 && bulan >= 0 && bulan <= 11 && tahun >= 1900 && tahun <= 2100) {
+            return new Date(tahun, bulan, hari);
+        }
+    }
+    
+    return null;
+}
+
 // Fungsi: Handle saat user memilih file Excel
 function handleFileExcel(event) {
     const file = event.target.files[0];
@@ -3501,20 +3563,40 @@ function handleFileExcel(event) {
             
             const header = jsonData[idxHeader].map(h => String(h || '').trim());
             
-            // Helper cari index kolom
+            // Helper cari index kolom (cocokkan kata utuh, bukan substring)
             const cariKolom = (kataKunci) => {
-                return header.findIndex(h => h.toLowerCase().includes(kataKunci.toLowerCase()));
+                return header.findIndex(h => {
+                    const hClean = String(h || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const kClean = kataKunci.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    return hClean === kClean || hClean.startsWith(kClean + '_') || hClean.endsWith('_' + kClean);
+                });
             };
             
-            // Mapping semua kolom
-            const idxNama = cariKolom('nama lengkap') !== -1 ? cariKolom('nama lengkap') : cariKolom('nama');
-            const idxJK = cariKolom('jenis kelamin') !== -1 ? cariKolom('jenis kelamin') : cariKolom('jk');
-            const idxNIS = cariKolom('nis') !== -1 && !header[cariKolom('nis')].toLowerCase().includes('nisn') ? cariKolom('nis') : -1;
-            const idxNISN = cariKolom('nisn');
-            const idxTempatLahir = cariKolom('tempat lahir');
-            const idxTglLahir = cariKolom('tanggal lahir') !== -1 ? cariKolom('tanggal lahir') : cariKolom('tgl lahir');
-            const idxKelas = cariKolom('kelas');
-            const idxJurusan = cariKolom('jurusan');
+            // Helper cari kolom dengan banyak alternatif (prioritas urutan)
+            const cariKolomAlternatif = (daftarKataKunci) => {
+                for (const kunci of daftarKataKunci) {
+                    const idx = cariKolom(kunci);
+                    if (idx !== -1) return idx;
+                }
+                // Fallback: cari dengan includes (lebih longgar)
+                for (const kunci of daftarKataKunci) {
+                    const idx = header.findIndex(h => String(h || '').trim().toLowerCase().includes(kunci.toLowerCase()));
+                    if (idx !== -1) return idx;
+                }
+                return -1;
+            };
+            
+            // Mapping semua kolom (urutan penting: cari yang spesifik dulu)
+            const idxNISN = cariKolomAlternatif(['nisn', 'nisn_siswa', 'nomor_induk_siswa_nasional']);
+            const idxNama = cariKolomAlternatif(['nama lengkap', 'nama_lengkap', 'nama', 'nama_siswa']);
+            const idxJK = cariKolomAlternatif(['jenis kelamin', 'jenis_kelamin', 'jk', 'kelamin', 'gender']);
+            // Cari NIS: pastikan bukan kolom NISN
+            let idxNIS = cariKolomAlternatif(['nis', 'nis_siswa', 'nomor_induk_siswa']);
+            if (idxNIS === idxNISN) idxNIS = -1; // Hindari tertukar dengan NISN
+            const idxTempatLahir = cariKolomAlternatif(['tempat lahir', 'tempat_lahir', 'tmp_lahir', 'tempat']);
+            const idxTglLahir = cariKolomAlternatif(['tanggal lahir', 'tanggal_lahir', 'tgl_lahir', 'tgl lahir', 'lahir']);
+            const idxKelas = cariKolomAlternatif(['kelas', 'tingkat']);
+            const idxJurusan = cariKolomAlternatif(['jurusan', 'program keahlian', 'program_keahlian', 'keahlian']);
             
             // Validasi kolom wajib
             const kolomWajib = [];
@@ -3538,7 +3620,14 @@ function handleFileExcel(event) {
                 const nisn = baris[idxNISN] ? String(baris[idxNISN]).trim() : '';
                 const nama = baris[idxNama] ? String(baris[idxNama]).trim() : '';
                 
-                if (!nisn || !nama) continue;
+                // Skip jika nama kosong
+                if (!nama) continue;
+                
+                // Jika NISN kosong, generate NISN sementara dari nama + nomor baris
+                let nisnFinal = nisn;
+                if (!nisnFinal) {
+                    nisnFinal = 'TEMP_' + nama.replace(/[^a-zA-Z0-9]/g, '').substring(0, 10).toUpperCase() + '_' + i;
+                }
                 
                 // Konversi tanggal lahir
                 let tglLahir = '';
@@ -3551,11 +3640,17 @@ function handleFileExcel(event) {
                         tglLahir = formatTanggal(date);
                     } else {
                         const strTgl = String(tgl).trim();
-                        const tglObj = new Date(strTgl);
-                        if (!isNaN(tglObj.getTime())) {
+                        const tglObj = parseTanggalIndo(strTgl);
+                        if (tglObj) {
                             tglLahir = formatTanggal(tglObj);
                         } else {
-                            tglLahir = strTgl;
+                            // Fallback: coba Date standar
+                            const tglStandar = new Date(strTgl);
+                            if (!isNaN(tglStandar.getTime())) {
+                                tglLahir = formatTanggal(tglStandar);
+                            } else {
+                                tglLahir = ''; // Kosongkan jika format tidak dikenali
+                            }
                         }
                     }
                 }
@@ -3564,7 +3659,9 @@ function handleFileExcel(event) {
                     nama_lengkap: nama,
                     jenis_kelamin: idxJK !== -1 && baris[idxJK] ? String(baris[idxJK]).trim() : '',
                     nis: idxNIS !== -1 && baris[idxNIS] ? String(baris[idxNIS]).trim() : '',
-                    nisn: nisn,
+                    nisn: nisnFinal,
+                    nisn_asli: nisn, // simpan NISN asli (kosong jika dari template)
+                    is_nisn_temp: !nisn, // flag apakah NISN digenerate sementara
                     tempat_lahir: idxTempatLahir !== -1 && baris[idxTempatLahir] ? String(baris[idxTempatLahir]).trim() : '',
                     tanggal_lahir: tglLahir,
                     kelas: String(baris[idxKelas] || '').trim(),
@@ -3639,7 +3736,7 @@ function tampilkanPreviewExcel(data) {
                                     <td class="px-2 py-2">${s.nama_lengkap}</td>
                                     <td class="px-2 py-2">${s.jenis_kelamin || '-'}</td>
                                     <td class="px-2 py-2 font-mono">${s.nis || '-'}</td>
-                                    <td class="px-2 py-2 font-mono">${s.nisn}</td>
+                                    <td class="px-2 py-2 font-mono">${s.is_nisn_temp ? '<span class="text-amber-600" title="NISN kosong di template, akan digenerate otomatis">⚠️ Auto</span>' : s.nisn}</td>
                                     <td class="px-2 py-2">${s.tempat_lahir || '-'}</td>
                                     <td class="px-2 py-2">${s.tanggal_lahir || '-'}</td>
                                     <td class="px-2 py-2">${s.kelas}</td>
@@ -3690,12 +3787,12 @@ async function simpanDataExcelKeDatabase() {
                 
                 for (const siswa of dataExcelSiswa) {
                     try {
-                        // Cek NISN duplikat
+                        // Cek NISN duplikat (menggunakan maybeSingle agar tidak error jika belum ada)
                         const { data: cek } = await sb
                             .from('siswa')
                             .select('id')
                             .eq('nisn', siswa.nisn)
-                            .single();
+                            .maybeSingle();
                         
                         if (cek) {
                             gagal++;
@@ -3725,13 +3822,29 @@ async function simpanDataExcelKeDatabase() {
                         if (errSiswa) throw errSiswa;
                         
                         // Buat akun user dengan status = "Nonaktif"
-                        await sb.from('users').insert({
-                            username: siswa.nisn,
-                            password: siswa.nisn,
-                            level: 'siswa',
-                            id_referensi: siswaBaru.id,
-                            status: 'Nonaktif'
-                        });
+                        // Cek dulu apakah username sudah ada di users
+                        const { data: cekUser } = await sb
+                            .from('users')
+                            .select('id')
+                            .eq('username', siswa.nisn)
+                            .maybeSingle();
+                        
+                        if (!cekUser) {
+                            // Jika belum ada, buat baru
+                            const { error: errUser } = await sb.from('users').insert({
+                                username: siswa.nisn,
+                                password: siswa.nisn,
+                                level: 'siswa',
+                                id_referensi: siswaBaru.id,
+                                status: 'Nonaktif'
+                            });
+                            if (errUser) throw errUser;
+                        } else {
+                            // Jika sudah ada, update id_referensi dan status
+                            await sb.from('users')
+                                .update({ id_referensi: siswaBaru.id, status: 'Nonaktif', level: 'siswa' })
+                                .eq('id', cekUser.id);
+                        }
                         
                         berhasil++;
                         
