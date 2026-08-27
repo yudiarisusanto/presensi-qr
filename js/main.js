@@ -705,9 +705,39 @@ function renderSiswaTable(data) {
     // Tombol Previous
     html += `<button onclick="siswaPage=${Math.max(1, siswaPage - 1)};filterSiswa()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${siswaPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${siswaPage === 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>`;
     
-    // Nomor halaman
-    for (let i = 1; i <= totalPages; i++) {
-        html += `<button onclick="siswaPage=${i};filterSiswa()" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${i === siswaPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${i}</button>`;
+
+    // Nomor halaman (dipersingkat dengan ellipsis)
+    const maxVisible = 5; // Jumlah tombol nomor yang ditampilkan
+    let pages = [];
+    if (totalPages <= maxVisible + 2) {
+        // Jika sedikit halaman, tampilkan semua
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else if (siswaPage <= maxVisible - 1) {
+        // Halaman aktif di bagian awal: 1 2 3 4 5 … last
+        for (let i = 1; i <= maxVisible; i++) pages.push(i);
+        pages.push('ellipsis');
+        pages.push(totalPages);
+    } else if (siswaPage >= totalPages - 3) {
+        // Halaman aktif di bagian akhir: 1 … (last-4) (last-3) (last-2) (last-1) last
+        pages.push(1);
+        pages.push('ellipsis');
+        for (let i = totalPages - maxVisible + 1; i <= totalPages; i++) pages.push(i);
+    } else {
+        // Halaman aktif di tengah: 1 … (curr-2) (curr-1) curr (curr+1) (curr+2) … last
+        pages.push(1);
+        pages.push('ellipsis');
+        for (let i = siswaPage - 1; i <= siswaPage + 1; i++) pages.push(i);
+        pages.push('ellipsis');
+        pages.push(totalPages);
+    }
+    
+    // Render tombol-tombol halaman
+    for (const p of pages) {
+        if (p === 'ellipsis') {
+            html += `<span class="w-8 h-8 flex items-center justify-center text-on-surface-variant font-medium">…</span>`;
+        } else {
+            html += `<button onclick="siswaPage=${p};filterSiswa()" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${p === siswaPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${p}</button>`;
+        }
     }
     
     // Tombol Next
@@ -971,9 +1001,39 @@ function renderMapelTable(data) {
     // Tombol Previous
     html += `<button onclick="mapelPage=${Math.max(1, mapelPage - 1)};filterMapel()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${mapelPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${mapelPage === 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>`;
     
-    // Nomor halaman
-    for (let i = 1; i <= totalPages; i++) {
-        html += `<button onclick="mapelPage=${i};filterMapel()" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${i === mapelPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${i}</button>`;
+
+    // Nomor halaman (dipersingkat dengan ellipsis)
+    const maxVisible = 5; // Jumlah tombol nomor yang ditampilkan
+    let pages = [];
+    if (totalPages <= maxVisible + 2) {
+        // Jika sedikit halaman, tampilkan semua
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else if (mapelPage <= maxVisible - 1) {
+        // Halaman aktif di bagian awal: 1 2 3 4 5 … last
+        for (let i = 1; i <= maxVisible; i++) pages.push(i);
+        pages.push('ellipsis');
+        pages.push(totalPages);
+    } else if (mapelPage >= totalPages - 3) {
+        // Halaman aktif di bagian akhir: 1 … (last-4) (last-3) (last-2) (last-1) last
+        pages.push(1);
+        pages.push('ellipsis');
+        for (let i = totalPages - maxVisible + 1; i <= totalPages; i++) pages.push(i);
+    } else {
+        // Halaman aktif di tengah: 1 … (curr-2) (curr-1) curr (curr+1) (curr+2) … last
+        pages.push(1);
+        pages.push('ellipsis');
+        for (let i = mapelPage - 1; i <= mapelPage + 1; i++) pages.push(i);
+        pages.push('ellipsis');
+        pages.push(totalPages);
+    }
+    
+    // Render tombol-tombol halaman
+    for (const p of pages) {
+        if (p === 'ellipsis') {
+            html += `<span class="w-8 h-8 flex items-center justify-center text-on-surface-variant font-medium">…</span>`;
+        } else {
+            html += `<button onclick="mapelPage=${p};filterMapel()" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${p === mapelPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${p}</button>`;
+        }
     }
     
     // Tombol Next
@@ -1288,9 +1348,39 @@ function renderJadwalTable(data) {
     // Tombol Previous
     buttonsHtml += `<button onclick="jadwalPage=${Math.max(1, jadwalPage - 1)};filterJadwal()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${jadwalPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${jadwalPage === 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>`;
     
-    // Nomor halaman
-    for (let i = 1; i <= totalPages; i++) {
-        buttonsHtml += `<button onclick="jadwalPage=${i};filterJadwal()" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${i === jadwalPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${i}</button>`;
+
+    // Nomor halaman (dipersingkat dengan ellipsis)
+    const maxVisible = 5; // Jumlah tombol nomor yang ditampilkan
+    let pages = [];
+    if (totalPages <= maxVisible + 2) {
+        // Jika sedikit halaman, tampilkan semua
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else if (jadwalPage <= maxVisible - 1) {
+        // Halaman aktif di bagian awal: 1 2 3 4 5 … last
+        for (let i = 1; i <= maxVisible; i++) pages.push(i);
+        pages.push('ellipsis');
+        pages.push(totalPages);
+    } else if (jadwalPage >= totalPages - 3) {
+        // Halaman aktif di bagian akhir: 1 … (last-4) (last-3) (last-2) (last-1) last
+        pages.push(1);
+        pages.push('ellipsis');
+        for (let i = totalPages - maxVisible + 1; i <= totalPages; i++) pages.push(i);
+    } else {
+        // Halaman aktif di tengah: 1 … (curr-2) (curr-1) curr (curr+1) (curr+2) … last
+        pages.push(1);
+        pages.push('ellipsis');
+        for (let i = jadwalPage - 1; i <= jadwalPage + 1; i++) pages.push(i);
+        pages.push('ellipsis');
+        pages.push(totalPages);
+    }
+    
+    // Render tombol-tombol halaman
+    for (const p of pages) {
+        if (p === 'ellipsis') {
+            buttonsHtml += `<span class="w-8 h-8 flex items-center justify-center text-on-surface-variant font-medium">…</span>`;
+        } else {
+            buttonsHtml += `<button onclick="jadwalPage=${p};filterJadwal()" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${p === jadwalPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${p}</button>`;
+        }
     }
     
     // Tombol Next
@@ -1706,9 +1796,39 @@ function renderQRTable(data) {
     // Tombol Previous
     buttonsHtml += `<button onclick="qrPage=${Math.max(1, qrPage - 1)};renderQRTable(window.currentQRFiltered || allQRData)" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${qrPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${qrPage === 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>`;
     
-    // Nomor halaman
-    for (let i = 1; i <= totalPages; i++) {
-        buttonsHtml += `<button onclick="qrPage=${i};renderQRTable(window.currentQRFiltered || allQRData)" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${i === qrPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${i}</button>`;
+
+    // Nomor halaman (dipersingkat dengan ellipsis)
+    const maxVisible = 5; // Jumlah tombol nomor yang ditampilkan
+    let pages = [];
+    if (totalPages <= maxVisible + 2) {
+        // Jika sedikit halaman, tampilkan semua
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else if (qrPage <= maxVisible - 1) {
+        // Halaman aktif di bagian awal: 1 2 3 4 5 … last
+        for (let i = 1; i <= maxVisible; i++) pages.push(i);
+        pages.push('ellipsis');
+        pages.push(totalPages);
+    } else if (qrPage >= totalPages - 3) {
+        // Halaman aktif di bagian akhir: 1 … (last-4) (last-3) (last-2) (last-1) last
+        pages.push(1);
+        pages.push('ellipsis');
+        for (let i = totalPages - maxVisible + 1; i <= totalPages; i++) pages.push(i);
+    } else {
+        // Halaman aktif di tengah: 1 … (curr-2) (curr-1) curr (curr+1) (curr+2) … last
+        pages.push(1);
+        pages.push('ellipsis');
+        for (let i = qrPage - 1; i <= qrPage + 1; i++) pages.push(i);
+        pages.push('ellipsis');
+        pages.push(totalPages);
+    }
+    
+    // Render tombol-tombol halaman
+    for (const p of pages) {
+        if (p === 'ellipsis') {
+            buttonsHtml += `<span class="w-8 h-8 flex items-center justify-center text-on-surface-variant font-medium">…</span>`;
+        } else {
+            buttonsHtml += `<button onclick="qrPage=${p};renderQRTable(window.currentQRFiltered || allQRData)" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${p === qrPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${p}</button>`;
+        }
     }
     
     // Tombol Next
@@ -2968,10 +3088,40 @@ async function loadRekapData() {
             // Tombol Previous
             buttonsHtml += `<button onclick="rekapPage=${Math.max(1, rekapPage - 1)};loadRekapData()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${rekapPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${rekapPage === 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>`;
             
-            // Nomor halaman
-            for (let i = 1; i <= totalPages; i++) {
-                buttonsHtml += `<button onclick="rekapPage=${i};loadRekapData()" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${i === rekapPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${i}</button>`;
+
+        // Nomor halaman (dipersingkat dengan ellipsis)
+        const maxVisible = 5; // Jumlah tombol nomor yang ditampilkan
+        let pages = [];
+        if (totalPages <= maxVisible + 2) {
+            // Jika sedikit halaman, tampilkan semua
+            for (let i = 1; i <= totalPages; i++) pages.push(i);
+        } else if (rekapPage <= maxVisible - 1) {
+            // Halaman aktif di bagian awal: 1 2 3 4 5 … last
+            for (let i = 1; i <= maxVisible; i++) pages.push(i);
+            pages.push('ellipsis');
+            pages.push(totalPages);
+        } else if (rekapPage >= totalPages - 3) {
+            // Halaman aktif di bagian akhir: 1 … (last-4) (last-3) (last-2) (last-1) last
+            pages.push(1);
+            pages.push('ellipsis');
+            for (let i = totalPages - maxVisible + 1; i <= totalPages; i++) pages.push(i);
+        } else {
+            // Halaman aktif di tengah: 1 … (curr-2) (curr-1) curr (curr+1) (curr+2) … last
+            pages.push(1);
+            pages.push('ellipsis');
+            for (let i = rekapPage - 1; i <= rekapPage + 1; i++) pages.push(i);
+            pages.push('ellipsis');
+            pages.push(totalPages);
+        }
+        
+        // Render tombol-tombol halaman
+        for (const p of pages) {
+            if (p === 'ellipsis') {
+                buttonsHtml += `<span class="w-8 h-8 flex items-center justify-center text-on-surface-variant font-medium">…</span>`;
+            } else {
+                buttonsHtml += `<button onclick="rekapPage=${p};loadRekapData()" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${p === rekapPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${p}</button>`;
             }
+        }
             
             // Tombol Next
             buttonsHtml += `<button onclick="rekapPage=${Math.min(totalPages, rekapPage + 1)};loadRekapData()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${rekapPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" ${rekapPage === totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>`;
