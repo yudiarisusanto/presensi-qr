@@ -90,9 +90,16 @@ async function loadNamaSekolah() {
     try {
         const sb = getSupabase();
         if (!sb) return namaSekolah;
-        const { data } = await sb.from('pengaturan_sistem').select('nilai').eq('pengaturan', 'Nama_Sekolah').single();
-        if (data && data.nilai && data.nilai.trim()) {
-            namaSekolah = data.nilai.trim();
+        // Coba baca dari tabel baru profil_sekolah terlebih dahulu
+        const { data: profilData } = await sb.from('profil_sekolah').select('nama_sekolah').limit(1).maybeSingle();
+        if (profilData && profilData.nama_sekolah && profilData.nama_sekolah.trim()) {
+            namaSekolah = profilData.nama_sekolah.trim();
+        } else {
+            // Fallback: baca dari pengaturan_sistem (untuk kompatibilitas)
+            const { data: oldData } = await sb.from('pengaturan_sistem').select('nilai').eq('pengaturan', 'Nama_Sekolah').maybeSingle();
+            if (oldData && oldData.nilai && oldData.nilai.trim()) {
+                namaSekolah = oldData.nilai.trim();
+            }
         }
     } catch(e) {}
     return namaSekolah;
@@ -106,6 +113,615 @@ function updateTampilanNamaSekolah() {
     }
 }
 
+
+
+// ============================================================
+// FUNGSI: Profil Sekolah (Menu Baru)
+// ============================================================
+async function loadProfilSekolah() {
+    const contentArea = document.getElementById('content-area');
+    
+    let profil = {};
+    try {
+        const sb = getSupabase();
+        const { data } = await sb.from('profil_sekolah').select('*').limit(1).maybeSingle();
+        if (data) profil = data;
+    } catch(e) {
+        console.error('Gagal memuat profil sekolah:', e);
+    }
+    
+    // Helper: tampilkan nilai atau "-" jika kosong
+    const v = (val) => val && val.toString().trim() ? val.toString().trim() : '-';
+    
+    contentArea.innerHTML = `
+        <div>
+            <header class="mb-stack-lg pb-stack-sm">
+                <h1 class="font-headline-lg text-headline-lg text-on-surface mb-2">Profil Sekolah</h1>
+                <p class="font-body-lg text-body-lg text-on-surface-variant">Informasi lengkap identitas sekolah Anda.</p>
+            </header>
+            
+            <!-- CARD: DETAIL DATA SEKOLAH (MODE VIEW) -->
+            <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden max-w-5xl">
+                <!-- HEADER CARD -->
+                <div class="px-container-padding py-3 flex items-center justify-between" 
+                     style="background: linear-gradient(to bottom right, #004349, #0d5c63); min-height: 52px;">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined" style="color: white;">school</span>
+                        <h2 class="font-headline-sm text-headline-sm" style="color: white;">Detail Data Sekolah</h2>
+                    </div>
+                </div>
+                
+                <!-- BODY CARD: Tampilan Data -->
+                <div class="p-container-padding">
+                    <!-- Identitas Dasar -->
+                    <div class="mb-6">
+                        <h3 class="font-label-md text-label-md text-primary uppercase tracking-wide mb-3 pb-2 border-b border-outline-variant/30">Identitas Dasar</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">Nama Sekolah</span>
+                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.nama_sekolah)}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">NPSN</span>
+                                <span class="text-on-surface font-body-md font-medium font-mono text-right">${v(profil.npsn)}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">Jenjang Pendidikan</span>
+                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.tingkat_sekolah)}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">Status Sekolah</span>
+                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.status_sekolah)}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">Negara</span>
+                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.negara)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Alamat Lengkap -->
+                    <div class="mb-6">
+                        <h3 class="font-label-md text-label-md text-primary uppercase tracking-wide mb-3 pb-2 border-b border-outline-variant/30">Alamat Lengkap</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2 md:col-span-2">
+                                <span class="text-on-surface-variant font-label-md">Alamat</span>
+                                <span class="text-on-surface font-body-md font-medium text-right max-w-md">${v(profil.alamat)}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">RT / RW</span>
+                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.rt_rw)}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">Kode Pos</span>
+                                <span class="text-on-surface font-body-md font-medium text-right font-mono">${v(profil.kode_pos)}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">Kelurahan / Desa</span>
+                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.kelurahan)}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">Kecamatan</span>
+                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.kecamatan)}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">Kabupaten / Kota</span>
+                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.kabupaten_kota)}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">Provinsi</span>
+                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.provinsi)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Kontak & Website -->
+                    <div class="mb-6">
+                        <h3 class="font-label-md text-label-md text-primary uppercase tracking-wide mb-3 pb-2 border-b border-outline-variant/30">Kontak & Website</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">Nomor Telepon</span>
+                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.kontak)}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">Nomor Fax</span>
+                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.nomor_fax)}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">Email</span>
+                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.email)}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">Website</span>
+                                <span class="text-on-surface font-body-md font-medium text-right break-all">${v(profil.website)}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">Lintang (Latitude)</span>
+                                <span class="text-on-surface font-body-md font-medium text-right font-mono">${v(profil.lintang)}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">Bujur (Longitude)</span>
+                                <span class="text-on-surface font-body-md font-medium text-right font-mono">${v(profil.bujur)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Kepala Sekolah -->
+                    <div class="mb-6">
+                        <h3 class="font-label-md text-label-md text-primary uppercase tracking-wide mb-3 pb-2 border-b border-outline-variant/30">Kepala Sekolah</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2 md:col-span-2">
+                                <span class="text-on-surface-variant font-label-md">Nama Lengkap</span>
+                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.nama_kepala_sekolah)}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">NIP</span>
+                                <span class="text-on-surface font-body-md font-medium text-right font-mono">${v(profil.nip_kepala_sekolah)}</span>
+                            </div>
+                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md">NUPTK</span>
+                                <span class="text-on-surface font-body-md font-medium text-right font-mono">${v(profil.nuptk)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Visi & Misi -->
+                    <div>
+                        <h3 class="font-label-md text-label-md text-primary uppercase tracking-wide mb-3 pb-2 border-b border-outline-variant/30">Visi & Misi</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <span class="text-on-surface-variant font-label-md block mb-2">Visi Sekolah</span>
+                                <p class="text-on-surface font-body-md bg-surface-container-low rounded-lg p-4 whitespace-pre-wrap">${v(profil.visi)}</p>
+                            </div>
+                            <div>
+                                <span class="text-on-surface-variant font-label-md block mb-2">Misi Sekolah</span>
+                                <p class="text-on-surface font-body-md bg-surface-container-low rounded-lg p-4 whitespace-pre-wrap">${v(profil.misi)}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- FOOTER CARD: Tombol Edit -->
+                <div class="px-container-padding py-4 bg-surface-container-low border-t border-outline-variant/30 flex justify-end">
+                    <button onclick="bukaModalEditProfil()" class="px-6 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-colors shadow-sm inline-flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">edit</span>
+                        Edit Data Sekolah
+                    </button>
+                </div>
+            </div>
+            
+            <!-- MODAL EDIT PROFIL SEKOLAH -->
+            <div id="modalEditProfil" class="fixed inset-0 z-[9997] hidden">
+                <div class="modal-overlay absolute inset-0 bg-black/50" onclick="tutupModalEditProfil()"></div>
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container-lowest rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col">
+                    <!-- Header Modal -->
+                    <div class="px-container-padding py-3 flex items-center justify-between shrink-0" 
+                         style="background: linear-gradient(to bottom right, #004349, #0d5c63); border-radius: 0.75rem 0.75rem 0 0;">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined" style="color: white;">edit</span>
+                            <h2 class="font-headline-sm text-headline-sm" style="color: white;">Edit Data Sekolah</h2>
+                        </div>
+                        <button onclick="tutupModalEditProfil()" class="p-1 rounded-lg hover:bg-white/10 transition-colors" style="color: white;">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Tab Modal -->
+                    <div class="px-container-padding pt-4 shrink-0">
+                        <div class="flex gap-1 p-1 rounded-lg w-full" style="background: #eceeee;">
+                            <button type="button" onclick="switchModalTab('modalTabManual')" id="modalTabManualBtn" class="modal-tab-btn active flex-1 px-3 py-2 rounded-md font-label-md transition-all bg-white shadow-sm text-sm" style="color: #004349;">
+                                <span class="material-symbols-outlined text-[16px] align-middle mr-1">edit_note</span>Edit Manual
+                            </button>
+                            <button type="button" onclick="switchModalTab('modalTabTemplate')" id="modalTabTemplateBtn" class="modal-tab-btn flex-1 px-3 py-2 rounded-md font-label-md transition-all text-sm text-on-surface-variant hover:bg-white">
+                                <span class="material-symbols-outlined text-[16px] align-middle mr-1">table_chart</span>Template Excel
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Body Modal (Scrollable) -->
+                    <div class="flex-1 overflow-y-auto px-container-padding py-4">
+                        <!-- TAB: EDIT MANUAL -->
+                        <div id="modalTabManual" class="modal-tab-content active space-y-5">
+                            <form id="formProfilManual" onsubmit="event.preventDefault(); simpanProfilDariModal();">
+                                <!-- Identitas Dasar -->
+                                <div class="mb-5">
+                                    <h4 class="font-label-md text-primary uppercase tracking-wide mb-3 pb-2 border-b border-outline-variant/30 text-xs">Identitas Dasar</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="md:col-span-2">
+                                            <label class="block mb-1 font-label-md text-xs">Nama Sekolah <span class="text-error">*</span></label>
+                                            <input type="text" id="ps_nama_sekolah" required class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none">
+                                        </div>
+                                        <div>
+                                            <label class="block mb-1 font-label-md text-xs">NPSN</label>
+                                            <input type="text" id="ps_npsn" maxlength="20" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm font-mono focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none">
+                                        </div>
+                                        <div>
+                                            <label class="block mb-1 font-label-md text-xs">Jenjang Pendidikan</label>
+                                            <select id="ps_tingkat_sekolah" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none">
+                                                <option value="SD">SD</option><option value="SMP">SMP</option><option value="SMA">SMA</option>
+                                                <option value="SMK">SMK</option><option value="MI">MI</option><option value="MTS">MTS</option>
+                                                <option value="MA">MA</option><option value="Lainnya">Lainnya</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block mb-1 font-label-md text-xs">Status Sekolah</label>
+                                            <select id="ps_status_sekolah" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none">
+                                                <option value="Negeri">Negeri</option><option value="Swasta">Swasta</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block mb-1 font-label-md text-xs">Negara</label>
+                                            <input type="text" id="ps_negara" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Alamat -->
+                                <div class="mb-5">
+                                    <h4 class="font-label-md text-primary uppercase tracking-wide mb-3 pb-2 border-b border-outline-variant/30 text-xs">Alamat Lengkap</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="md:col-span-2">
+                                            <label class="block mb-1 font-label-md text-xs">Alamat</label>
+                                            <textarea id="ps_alamat" rows="2" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm resize-none focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"></textarea>
+                                        </div>
+                                        <div><label class="block mb-1 font-label-md text-xs">RT / RW</label><input type="text" id="ps_rt_rw" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"></div>
+                                        <div><label class="block mb-1 font-label-md text-xs">Kode Pos</label><input type="text" id="ps_kode_pos" maxlength="10" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm font-mono focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"></div>
+                                        <div><label class="block mb-1 font-label-md text-xs">Kelurahan / Desa</label><input type="text" id="ps_kelurahan" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"></div>
+                                        <div><label class="block mb-1 font-label-md text-xs">Kecamatan</label><input type="text" id="ps_kecamatan" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"></div>
+                                        <div><label class="block mb-1 font-label-md text-xs">Kabupaten / Kota</label><input type="text" id="ps_kabupaten_kota" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"></div>
+                                        <div><label class="block mb-1 font-label-md text-xs">Provinsi</label><input type="text" id="ps_provinsi" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Kontak -->
+                                <div class="mb-5">
+                                    <h4 class="font-label-md text-primary uppercase tracking-wide mb-3 pb-2 border-b border-outline-variant/30 text-xs">Kontak & Lokasi</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div><label class="block mb-1 font-label-md text-xs">Nomor Telepon</label><input type="text" id="ps_kontak" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"></div>
+                                        <div><label class="block mb-1 font-label-md text-xs">Nomor Fax</label><input type="text" id="ps_nomor_fax" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"></div>
+                                        <div><label class="block mb-1 font-label-md text-xs">Email</label><input type="email" id="ps_email" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"></div>
+                                        <div><label class="block mb-1 font-label-md text-xs">Website</label><input type="text" id="ps_website" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"></div>
+                                        <div><label class="block mb-1 font-label-md text-xs">Lintang (Latitude)</label><input type="text" id="ps_lintang" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm font-mono focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"></div>
+                                        <div><label class="block mb-1 font-label-md text-xs">Bujur (Longitude)</label><input type="text" id="ps_bujur" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm font-mono focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Kepala Sekolah -->
+                                <div class="mb-5">
+                                    <h4 class="font-label-md text-primary uppercase tracking-wide mb-3 pb-2 border-b border-outline-variant/30 text-xs">Kepala Sekolah</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div class="md:col-span-2"><label class="block mb-1 font-label-md text-xs">Nama Lengkap</label><input type="text" id="ps_nama_kepala_sekolah" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"></div>
+                                        <div><label class="block mb-1 font-label-md text-xs">NIP</label><input type="text" id="ps_nip_kepala_sekolah" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm font-mono focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"></div>
+                                        <div class="md:col-span-2"><label class="block mb-1 font-label-md text-xs">NUPTK</label><input type="text" id="ps_nuptk" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm font-mono focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Visi Misi -->
+                                <div>
+                                    <h4 class="font-label-md text-primary uppercase tracking-wide mb-3 pb-2 border-b border-outline-variant/30 text-xs">Visi & Misi</h4>
+                                    <div class="space-y-4">
+                                        <div><label class="block mb-1 font-label-md text-xs">Visi Sekolah</label><textarea id="ps_visi" rows="3" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"></textarea></div>
+                                        <div><label class="block mb-1 font-label-md text-xs">Misi Sekolah</label><textarea id="ps_misi" rows="4" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-3 py-2 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"></textarea></div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- TAB: TEMPLATE EXCEL -->
+                        <div id="modalTabTemplate" class="modal-tab-content hidden">
+                            <div class="space-y-6">
+                                <!-- Download Template -->
+                                <div class="bg-primary-container/20 rounded-lg p-5 border border-primary/20">
+                                    <div class="flex items-start gap-4">
+                                        <div class="w-12 h-12 rounded-lg bg-primary flex items-center justify-center shrink-0">
+                                            <span class="material-symbols-outlined text-white">download</span>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h4 class="font-headline-sm text-headline-sm text-on-surface mb-1">Download Template</h4>
+                                            <p class="font-body-md text-body-md text-on-surface-variant text-sm mb-3">Unduh template Excel untuk mengisi data sekolah secara offline.</p>
+                                            <button onclick="downloadTemplateProfilSekolah()" class="px-4 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-colors text-sm inline-flex items-center gap-2">
+                                                <span class="material-symbols-outlined text-[18px]">download</span>Download Template Excel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Upload Template -->
+                                <div class="bg-surface-container-low rounded-lg p-5 border border-outline-variant/30">
+                                    <div class="flex items-start gap-4">
+                                        <div class="w-12 h-12 rounded-lg bg-secondary-container flex items-center justify-center shrink-0">
+                                            <span class="material-symbols-outlined text-on-secondary-container">upload</span>
+                                        </div>
+                                        <div class="flex-1 w-full">
+                                            <h4 class="font-headline-sm text-headline-sm text-on-surface mb-1">Upload Template</h4>
+                                            <p class="font-body-md text-body-md text-on-surface-variant text-sm mb-3">Upload file Excel yang sudah diisi untuk mengupdate data sekolah secara otomatis.</p>
+                                            <div class="flex items-center gap-3 flex-wrap">
+                                                <input type="file" id="fileProfilTemplate" accept=".xlsx,.xls" class="hidden" onchange="handleUploadProfilTemplate(event)">
+                                                <button onclick="document.getElementById('fileProfilTemplate').click()" class="px-4 py-2 rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container-highest transition-colors text-sm inline-flex items-center gap-2">
+                                                    <span class="material-symbols-outlined text-[18px]">folder_open</span>Pilih File Excel
+                                                </button>
+                                                <span id="namaFileProfil" class="text-sm text-on-surface-variant">Belum ada file dipilih</span>
+                                            </div>
+                                            <p id="previewUploadProfil" class="text-xs text-on-surface-variant mt-3 hidden bg-surface-container-lowest rounded p-3"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-error-container/30 rounded-lg p-4 border border-error/20">
+                                    <div class="flex items-start gap-3">
+                                        <span class="material-symbols-outlined text-error shrink-0">info</span>
+                                        <p class="text-sm text-on-surface-variant">
+                                            <strong>Catatan:</strong> Data dari template Excel akan menimpa semua data sekolah yang ada. Pastikan file yang diupload sudah benar.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Footer Modal -->
+                    <div class="px-container-padding py-4 bg-surface-container-low border-t border-outline-variant/30 flex justify-between items-center shrink-0 rounded-b-xl">
+                        <button type="button" onclick="tutupModalEditProfil()" class="px-4 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-colors text-sm">
+                            Batal
+                        </button>
+                        <button type="button" onclick="simpanProfilDariModal()" class="px-6 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-colors shadow-sm text-sm inline-flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[18px]">save</span>Simpan Perubahan
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Isi form modal dengan data saat ini
+    isiFormModalProfil(profil);
+}
+
+// ============================================================
+// FUNGSI BANTUAN: Isi form modal dengan data
+// ============================================================
+function isiFormModalProfil(profil) {
+    const fields = ['nama_sekolah','npsn','tingkat_sekolah','status_sekolah','negara',
+        'alamat','rt_rw','kode_pos','kelurahan','kecamatan','kabupaten_kota','provinsi',
+        'kontak','nomor_fax','email','website','lintang','bujur',
+        'nama_kepala_sekolah','nip_kepala_sekolah','nuptk','visi','misi'];
+    
+    fields.forEach(f => {
+        const el = document.getElementById('ps_' + f);
+        if (el && profil[f]) {
+            el.value = profil[f];
+        } else if (el) {
+            el.value = '';
+        }
+    });
+    
+    // Default negara
+    const elNegara = document.getElementById('ps_negara');
+    if (elNegara && !elNegara.value) elNegara.value = 'Indonesia';
+}
+
+// ============================================================
+// FUNGSI: Buka & Tutup Modal Edit
+// ============================================================
+function bukaModalEditProfil() {
+    const modal = document.getElementById('modalEditProfil');
+    if (modal) modal.classList.remove('hidden');
+    // Aktifkan tab pertama
+    switchModalTab('modalTabManual');
+}
+
+function tutupModalEditProfil() {
+    const modal = document.getElementById('modalEditProfil');
+    if (modal) modal.classList.add('hidden');
+}
+
+// ============================================================
+// FUNGSI: Switch tab di dalam modal
+// ============================================================
+function switchModalTab(tabId) {
+    document.querySelectorAll('.modal-tab-content').forEach(tab => tab.classList.add('hidden'));
+    document.querySelectorAll('.modal-tab-btn').forEach(btn => {
+        btn.classList.remove('active', 'bg-white', 'shadow-sm');
+        btn.style.color = '';
+        btn.classList.add('text-on-surface-variant', 'hover:bg-white');
+    });
+    
+    const tab = document.getElementById(tabId);
+    if (tab) tab.classList.remove('hidden');
+    
+    const btnId = tabId + 'Btn';
+    const btn = document.getElementById(btnId);
+    if (btn) {
+        btn.classList.add('active', 'bg-white', 'shadow-sm');
+        btn.classList.remove('text-on-surface-variant', 'hover:bg-white');
+        btn.style.color = '#004349';
+    }
+}
+
+// ============================================================
+// FUNGSI: Simpan profil dari modal
+// ============================================================
+async function simpanProfilDariModal() {
+    showLoading('Menyimpan profil sekolah...');
+    try {
+        const sb = getSupabase();
+        
+        const { data: existing } = await sb.from('profil_sekolah').select('id').limit(1).maybeSingle();
+        
+        const data = {
+            nama_sekolah: document.getElementById('ps_nama_sekolah').value.trim(),
+            npsn: document.getElementById('ps_npsn').value.trim(),
+            tingkat_sekolah: document.getElementById('ps_tingkat_sekolah').value,
+            status_sekolah: document.getElementById('ps_status_sekolah').value,
+            alamat: document.getElementById('ps_alamat').value.trim(),
+            rt_rw: document.getElementById('ps_rt_rw').value.trim(),
+            kode_pos: document.getElementById('ps_kode_pos').value.trim(),
+            kelurahan: document.getElementById('ps_kelurahan').value.trim(),
+            kecamatan: document.getElementById('ps_kecamatan').value.trim(),
+            kabupaten_kota: document.getElementById('ps_kabupaten_kota').value.trim(),
+            provinsi: document.getElementById('ps_provinsi').value.trim(),
+            negara: document.getElementById('ps_negara').value.trim() || 'Indonesia',
+            kontak: document.getElementById('ps_kontak').value.trim(),
+            nomor_fax: document.getElementById('ps_nomor_fax').value.trim(),
+            email: document.getElementById('ps_email').value.trim(),
+            website: document.getElementById('ps_website').value.trim(),
+            lintang: document.getElementById('ps_lintang').value.trim(),
+            bujur: document.getElementById('ps_bujur').value.trim(),
+            nama_kepala_sekolah: document.getElementById('ps_nama_kepala_sekolah').value.trim(),
+            nip_kepala_sekolah: document.getElementById('ps_nip_kepala_sekolah').value.trim(),
+            nuptk: document.getElementById('ps_nuptk').value.trim(),
+            visi: document.getElementById('ps_visi').value.trim(),
+            misi: document.getElementById('ps_misi').value.trim()
+        };
+        
+        if (!data.nama_sekolah) {
+            hideLoading();
+            showToast('Nama sekolah wajib diisi!', 'error');
+            return;
+        }
+        
+        if (existing && existing.id) {
+            await sb.from('profil_sekolah').update(data).eq('id', existing.id);
+        } else {
+            await sb.from('profil_sekolah').insert(data);
+        }
+        
+        if (data.nama_sekolah) {
+            namaSekolah = data.nama_sekolah;
+            updateTampilanNamaSekolah();
+        }
+        
+        hideLoading();
+        tutupModalEditProfil();
+        showToast('Profil sekolah berhasil disimpan!', 'success');
+        loadProfilSekolah(); // Refresh tampilan
+    } catch (e) {
+        hideLoading();
+        showToast('Gagal menyimpan: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// FUNGSI: Download Template Excel Profil Sekolah
+// ============================================================
+function downloadTemplateProfilSekolah() {
+    // Unduh template dari folder asset/
+    const link = document.createElement('a');
+    link.href = 'asset/template_profil_sekolah.xlsx';
+    link.download = 'template_profil_sekolah.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Template berhasil diunduh!', 'success');
+}
+
+// ============================================================
+// FUNGSI: Handle Upload Template Excel
+// ============================================================
+function handleUploadProfilTemplate(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    document.getElementById('namaFileProfil').textContent = file.name;
+    
+    if (typeof XLSX === 'undefined') {
+        showToast('Library Excel belum dimuat', 'error');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            // 🔧 PERBAIKAN: Cari sheet bernama "Profil Sekolah" secara spesifik
+            // Sebelumnya selalu mengambil sheet pertama (index 0) yang isinya "Petunjuk"
+            let sheetName = null;
+            
+            // Prioritas 1: Cari sheet dengan nama persis "Profil Sekolah"
+            if (workbook.SheetNames.includes('Profil Sekolah')) {
+                sheetName = 'Profil Sekolah';
+            }
+            // Prioritas 2: Cari sheet yang mengandung kata "profil" (case-insensitive)
+            if (!sheetName) {
+                sheetName = workbook.SheetNames.find(name => 
+                    name.toLowerCase().includes('profil')
+                );
+            }
+            // Prioritas 3: Jika tidak ada, gunakan sheet terakhir (biasanya data ada di sheet terakhir)
+            if (!sheetName) {
+                sheetName = workbook.SheetNames[workbook.SheetNames.length - 1];
+            }
+            
+            const worksheet = workbook.Sheets[sheetName];
+            const json = XLSX.utils.sheet_to_json(worksheet, { defval: '', range: 2 }); // range:2 = lewati baris 1-2, header mulai baris 3
+            
+            if (json.length === 0) {
+                showToast('File template kosong atau format tidak sesuai. Pastikan data diisi pada baris ke-4 di sheet "Profil Sekolah".', 'error');
+                return;
+            }
+            
+            const row = json[0];
+            
+            // Mapping kolom Excel ke field database
+            const mapping = {
+                'Nama Sekolah': 'nama_sekolah', 'NPSN': 'npsn', 'Tingkat Sekolah': 'tingkat_sekolah',
+                'Status Sekolah': 'status_sekolah', 'Negara': 'negara', 'Alamat': 'alamat',
+                'RT/RW': 'rt_rw', 'Kode Pos': 'kode_pos', 'Kelurahan': 'kelurahan',
+                'Kecamatan': 'kecamatan', 'Kabupaten/Kota': 'kabupaten_kota', 'Provinsi': 'provinsi',
+                'Nomor Telepon': 'kontak', 'Nomor Fax': 'nomor_fax', 'Email': 'email',
+                'Website': 'website', 'Lintang': 'lintang', 'Bujur': 'bujur',
+                'Nama Kepala Sekolah': 'nama_kepala_sekolah', 'NIP': 'nip_kepala_sekolah',
+                'NUPTK': 'nuptk', 'Visi': 'visi', 'Misi': 'misi'
+            };
+            
+            // Normalisasi key dari Excel (hapus * dan spasi berlebih) agar toleran terhadap variasi
+            const normalizedRow = {};
+            Object.keys(row).forEach(key => {
+                const cleanKey = key.replace(/\*/g, '').replace(/\s+/g, ' ').trim();
+                normalizedRow[cleanKey] = row[key];
+            });
+            
+            // Cek apakah ada kolom wajib yang terisi
+            let adaData = false;
+            Object.keys(mapping).forEach(excelKey => {
+                if (normalizedRow[excelKey] !== undefined && String(normalizedRow[excelKey]).trim() !== '') {
+                    adaData = true;
+                }
+            });
+            
+            if (!adaData) {
+                showToast('Tidak ada data yang terbaca dari template. Pastikan data diisi pada baris ke-4 di sheet "Profil Sekolah".', 'error');
+                return;
+            }
+            
+            // Isi form dengan data dari Excel
+            let fieldTerisi = 0;
+            Object.keys(mapping).forEach(excelKey => {
+                const dbField = mapping[excelKey];
+                const el = document.getElementById('ps_' + dbField);
+                if (el && normalizedRow[excelKey] !== undefined && normalizedRow[excelKey] !== '') {
+                    el.value = String(normalizedRow[excelKey]).trim();
+                    fieldTerisi++;
+                }
+            });
+            
+            const preview = document.getElementById('previewUploadProfil');
+            preview.textContent = `✅ Data dari template berhasil dimuat! ${fieldTerisi} kolom terisi. Silakan klik "Simpan Perubahan" di bawah untuk menyimpan ke database.`;
+            preview.classList.remove('hidden');
+            
+            // Otomatis pindah ke tab Edit Manual agar user bisa melihat data yang terisi
+            switchModalTab('modalTabManual');
+            
+            showToast(`Template berhasil dibaca! ${fieldTerisi} kolom data dimuat.`, 'success');
+        } catch (err) {
+            showToast('Gagal membaca file: ' + err.message, 'error');
+            console.error('Error parsing Excel:', err);
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
 function loadPage(pageName) {
     currentPage = pageName;
     
@@ -135,6 +751,7 @@ function loadPage(pageName) {
         case 'rekapAbsen': loadRekapAbsen(); break;
         case 'pusatUnduhan': loadPusatUnduhan(); break;
         case 'profilPengguna': loadProfilPengguna(); break;
+        case 'profilSekolah': loadProfilSekolah(); break;
         case 'pengaturan': loadPengaturan(); break;
         default: loadDashboardAdmin();
     }
@@ -712,12 +1329,12 @@ function renderSiswaTable(data) {
     if (totalPages <= maxVisible + 2) {
         // Jika sedikit halaman, tampilkan semua
         for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else if (siswaPage <= maxVisible - 1) {
+    } else if (siswaPage <= maxVisible) {
         // Halaman aktif di bagian awal: 1 2 3 4 5 … last
         for (let i = 1; i <= maxVisible; i++) pages.push(i);
         pages.push('ellipsis');
         pages.push(totalPages);
-    } else if (siswaPage >= totalPages - 3) {
+    } else if (siswaPage >= totalPages - maxVisible + 1) {
         // Halaman aktif di bagian akhir: 1 … (last-4) (last-3) (last-2) (last-1) last
         pages.push(1);
         pages.push('ellipsis');
@@ -726,7 +1343,7 @@ function renderSiswaTable(data) {
         // Halaman aktif di tengah: 1 … (curr-2) (curr-1) curr (curr+1) (curr+2) … last
         pages.push(1);
         pages.push('ellipsis');
-        for (let i = siswaPage - 1; i <= siswaPage + 1; i++) pages.push(i);
+        for (let i = siswaPage - 2; i <= siswaPage + 2; i++) pages.push(i);
         pages.push('ellipsis');
         pages.push(totalPages);
     }
@@ -1008,12 +1625,12 @@ function renderMapelTable(data) {
     if (totalPages <= maxVisible + 2) {
         // Jika sedikit halaman, tampilkan semua
         for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else if (mapelPage <= maxVisible - 1) {
+    } else if (mapelPage <= maxVisible) {
         // Halaman aktif di bagian awal: 1 2 3 4 5 … last
         for (let i = 1; i <= maxVisible; i++) pages.push(i);
         pages.push('ellipsis');
         pages.push(totalPages);
-    } else if (mapelPage >= totalPages - 3) {
+    } else if (mapelPage >= totalPages - maxVisible + 1) {
         // Halaman aktif di bagian akhir: 1 … (last-4) (last-3) (last-2) (last-1) last
         pages.push(1);
         pages.push('ellipsis');
@@ -1022,7 +1639,7 @@ function renderMapelTable(data) {
         // Halaman aktif di tengah: 1 … (curr-2) (curr-1) curr (curr+1) (curr+2) … last
         pages.push(1);
         pages.push('ellipsis');
-        for (let i = mapelPage - 1; i <= mapelPage + 1; i++) pages.push(i);
+        for (let i = mapelPage - 2; i <= mapelPage + 2; i++) pages.push(i);
         pages.push('ellipsis');
         pages.push(totalPages);
     }
@@ -1355,12 +1972,12 @@ function renderJadwalTable(data) {
     if (totalPages <= maxVisible + 2) {
         // Jika sedikit halaman, tampilkan semua
         for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else if (jadwalPage <= maxVisible - 1) {
+    } else if (jadwalPage <= maxVisible) {
         // Halaman aktif di bagian awal: 1 2 3 4 5 … last
         for (let i = 1; i <= maxVisible; i++) pages.push(i);
         pages.push('ellipsis');
         pages.push(totalPages);
-    } else if (jadwalPage >= totalPages - 3) {
+    } else if (jadwalPage >= totalPages - maxVisible + 1) {
         // Halaman aktif di bagian akhir: 1 … (last-4) (last-3) (last-2) (last-1) last
         pages.push(1);
         pages.push('ellipsis');
@@ -1369,7 +1986,7 @@ function renderJadwalTable(data) {
         // Halaman aktif di tengah: 1 … (curr-2) (curr-1) curr (curr+1) (curr+2) … last
         pages.push(1);
         pages.push('ellipsis');
-        for (let i = jadwalPage - 1; i <= jadwalPage + 1; i++) pages.push(i);
+        for (let i = jadwalPage - 2; i <= jadwalPage + 2; i++) pages.push(i);
         pages.push('ellipsis');
         pages.push(totalPages);
     }
@@ -1803,12 +2420,12 @@ function renderQRTable(data) {
     if (totalPages <= maxVisible + 2) {
         // Jika sedikit halaman, tampilkan semua
         for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else if (qrPage <= maxVisible - 1) {
+    } else if (qrPage <= maxVisible) {
         // Halaman aktif di bagian awal: 1 2 3 4 5 … last
         for (let i = 1; i <= maxVisible; i++) pages.push(i);
         pages.push('ellipsis');
         pages.push(totalPages);
-    } else if (qrPage >= totalPages - 3) {
+    } else if (qrPage >= totalPages - maxVisible + 1) {
         // Halaman aktif di bagian akhir: 1 … (last-4) (last-3) (last-2) (last-1) last
         pages.push(1);
         pages.push('ellipsis');
@@ -1817,7 +2434,7 @@ function renderQRTable(data) {
         // Halaman aktif di tengah: 1 … (curr-2) (curr-1) curr (curr+1) (curr+2) … last
         pages.push(1);
         pages.push('ellipsis');
-        for (let i = qrPage - 1; i <= qrPage + 1; i++) pages.push(i);
+        for (let i = qrPage - 2; i <= qrPage + 2; i++) pages.push(i);
         pages.push('ellipsis');
         pages.push(totalPages);
     }
@@ -3095,12 +3712,12 @@ async function loadRekapData() {
         if (totalPages <= maxVisible + 2) {
             // Jika sedikit halaman, tampilkan semua
             for (let i = 1; i <= totalPages; i++) pages.push(i);
-        } else if (rekapPage <= maxVisible - 1) {
+        } else if (rekapPage <= maxVisible) {
             // Halaman aktif di bagian awal: 1 2 3 4 5 … last
             for (let i = 1; i <= maxVisible; i++) pages.push(i);
             pages.push('ellipsis');
             pages.push(totalPages);
-        } else if (rekapPage >= totalPages - 3) {
+        } else if (rekapPage >= totalPages - maxVisible + 1) {
             // Halaman aktif di bagian akhir: 1 … (last-4) (last-3) (last-2) (last-1) last
             pages.push(1);
             pages.push('ellipsis');
@@ -3109,7 +3726,7 @@ async function loadRekapData() {
             // Halaman aktif di tengah: 1 … (curr-2) (curr-1) curr (curr+1) (curr+2) … last
             pages.push(1);
             pages.push('ellipsis');
-            for (let i = rekapPage - 1; i <= rekapPage + 1; i++) pages.push(i);
+            for (let i = rekapPage - 2; i <= rekapPage + 2; i++) pages.push(i);
             pages.push('ellipsis');
             pages.push(totalPages);
         }
@@ -3189,10 +3806,7 @@ async function loadPengaturan() {
             <!-- TAB MENU: WARNA HIJAU GRADIEN, DIPERLEBAR, TEKS SEMBUNYI DI MOBILE -->
             <div class="flex gap-1 mb-stack-lg p-1 rounded-xl w-full max-w-4xl" 
                  style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
-                <button onclick="switchTab('tabSekolah')" class="tab-btn active flex-1 px-2 sm:px-4 py-2 rounded-lg font-label-md transition-all bg-white shadow-sm whitespace-nowrap" data-tab="tabSekolah" style="color: #004349;">
-                    <span class="material-symbols-outlined text-[18px] align-middle sm:mr-1">school</span><span class="hidden sm:inline">Profil Sekolah</span>
-                </button>
-                <button onclick="switchTab('tabAbsensi')" class="tab-btn flex-1 px-2 sm:px-4 py-2 rounded-lg font-label-md transition-all whitespace-nowrap" data-tab="tabAbsensi" style="color: white;">
+                <button onclick="switchTab('tabAbsensi')" class="tab-btn active flex-1 px-2 sm:px-4 py-2 rounded-lg font-label-md transition-all bg-white shadow-sm whitespace-nowrap" data-tab="tabAbsensi" style="color: #004349;">
                     <span class="material-symbols-outlined text-[18px] align-middle sm:mr-1">schedule</span><span class="hidden sm:inline">Jam Absensi</span>
                 </button>
                 <button onclick="switchTab('tabAkun')" class="tab-btn flex-1 px-2 sm:px-4 py-2 rounded-lg font-label-md transition-all whitespace-nowrap" data-tab="tabAkun" style="color: white;">
@@ -3201,77 +3815,6 @@ async function loadPengaturan() {
                 <button onclick="switchTab('tabSistem')" class="tab-btn flex-1 px-2 sm:px-4 py-2 rounded-lg font-label-md transition-all whitespace-nowrap" data-tab="tabSistem" style="color: white;">
                     <span class="material-symbols-outlined text-[18px] align-middle sm:mr-1">tune</span><span class="hidden sm:inline">Konfigurasi Sistem</span>
                 </button>
-            </div>
-            
-            <div id="tabSekolah" class="tab-content active">
-                <!-- CARD IDENTITAS SEKOLAH DENGAN HEADER HIJAU -->
-                <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden max-w-4xl">
-                    <!-- HEADER CARD: WARNA HIJAU GRADIEN, ICON & TULISAN PUTIH -->
-                    <div class="px-container-padding py-3 flex items-center gap-2" 
-                         style="background: linear-gradient(to bottom right, #004349, #0d5c63); min-height: 52px;">
-                        <span class="material-symbols-outlined" style="color: white;">school</span>
-                        <h2 class="font-headline-sm text-headline-sm" style="color: white;">Identitas Sekolah</h2>
-                    </div>
-                    <!-- BODY CARD -->
-                    <div class="p-container-padding">
-                        <!-- UPLOAD LOGO SEKOLAH -->
-                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-stack-md pb-stack-md border-b border-surface-variant mb-5">
-                            <div id="logoPreviewContainer" class="w-20 h-20 rounded-full border-2 border-dashed border-outline-variant bg-surface-container flex items-center justify-center overflow-hidden shrink-0 group relative cursor-pointer hover:border-primary transition-colors" onclick="document.getElementById('logoSekolahInput').click()">
-                                <span id="logoPlaceholderIcon" class="material-symbols-outlined text-outline group-hover:text-primary transition-colors z-10">add_photo_alternate</span>
-                                <img id="logoPreviewImg" class="w-full h-full object-cover hidden absolute inset-0" alt="Logo Sekolah">
-                                <div class="absolute inset-0 bg-black/5 group-hover:bg-primary/5 transition-colors"></div>
-                            </div>
-                            <input type="file" id="logoSekolahInput" accept="image/jpeg,image/png,image/svg+xml" class="hidden" onchange="handleLogoUpload(event)">
-                            <div>
-                                <h4 class="font-label-md text-label-md text-on-surface mb-1">Logo Sekolah</h4>
-                                <p class="font-body-md text-body-md text-on-surface-variant text-xs mb-3">Format JPG, PNG, atau SVG. Maksimal 2MB. Rasio 1:1 direkomendasikan.</p>
-                                <button type="button" onclick="document.getElementById('logoSekolahInput').click()" class="bg-surface-container border border-outline-variant text-on-surface py-1.5 px-4 rounded-lg font-label-md text-label-md hover:bg-surface-container-highest transition-colors inline-flex items-center gap-2 text-xs">
-                                    <span class="material-symbols-outlined text-[16px]">upload</span> Unggah File
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <form id="formSekolah" onsubmit="event.preventDefault(); simpanPengaturanSekolah();" class="space-y-5">
-                            <div><label class="block mb-2 font-label-md">Nama Sekolah</label>
-                                <input type="text" id="namaSekolah" value="${pengaturan.Nama_Sekolah || ''}" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5"></div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div><label class="block mb-2 font-label-md">NPSN</label>
-                                    <input type="text" id="npsnSekolah" value="${pengaturan.NPSN || ''}" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5"></div>
-                                <div><label class="block mb-2 font-label-md">Tingkat Sekolah</label>
-                                    <select id="tingkatSekolah" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5">
-                                        <option value="SD" ${pengaturan.Tingkat_Sekolah === 'SD' ? 'selected' : ''}>SD</option>
-                                        <option value="SMP" ${pengaturan.Tingkat_Sekolah === 'SMP' ? 'selected' : ''}>SMP</option>
-                                        <option value="SMA" ${pengaturan.Tingkat_Sekolah === 'SMA' ? 'selected' : ''}>SMA</option>
-                                        <option value="SMK" ${pengaturan.Tingkat_Sekolah === 'SMK' || !pengaturan.Tingkat_Sekolah ? 'selected' : ''}>SMK</option>
-                                        <option value="MI" ${pengaturan.Tingkat_Sekolah === 'MI' ? 'selected' : ''}>MI</option>
-                                        <option value="MTS" ${pengaturan.Tingkat_Sekolah === 'MTS' ? 'selected' : ''}>MTS</option>
-                                        <option value="MA" ${pengaturan.Tingkat_Sekolah === 'MA' ? 'selected' : ''}>MA</option>
-                                    </select></div>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div><label class="block mb-2 font-label-md">Status Sekolah</label>
-                                    <select id="statusSekolah" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5">
-                                        <option value="Negeri" ${pengaturan.Status_Sekolah === 'Negeri' || !pengaturan.Status_Sekolah ? 'selected' : ''}>Negeri</option>
-                                        <option value="Swasta" ${pengaturan.Status_Sekolah === 'Swasta' ? 'selected' : ''}>Swasta</option>
-                                    </select></div>
-                                <div><label class="block mb-2 font-label-md">Email Sekolah</label>
-                                    <input type="email" id="emailSekolah" value="${pengaturan.Email_Sekolah || ''}" placeholder="contoh@email.sch.id" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5"></div>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div><label class="block mb-2 font-label-md">Website</label>
-                                    <input type="text" id="websiteSekolah" value="${pengaturan.Website || ''}" placeholder="https://www.sekolah.sch.id" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5"></div>
-                                <div><label class="block mb-2 font-label-md">Kontak / Telepon</label>
-                                    <input type="text" id="kontakSekolah" value="${pengaturan.Kontak || ''}" placeholder="(021) 1234567" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5"></div>
-                            </div>
-                            <div><label class="block mb-2 font-label-md">Alamat Lengkap</label>
-                                <textarea id="alamatSekolah" rows="3" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5 resize-none">${pengaturan.Alamat || ''}</textarea></div>
-                            <div class="flex justify-end gap-3 pt-4 border-t">
-                                <button type="button" onclick="loadPengaturan()" class="px-5 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest">Reset</button>
-                                <button type="submit" class="px-5 py-2 rounded-lg bg-primary text-on-primary hover:opacity-90 shadow-sm">Simpan Pengaturan</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
             </div>
             
             <div id="tabAbsensi" class="tab-content">
@@ -3396,6 +3939,9 @@ async function loadPengaturan() {
             </div>
         </div>
     `;
+    
+    // Inisialisasi: pastikan tab Jam Absensi aktif otomatis
+    if (typeof switchTab === 'function') switchTab('tabAbsensi');
 }
 
 function switchTab(tabId) {
