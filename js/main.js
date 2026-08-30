@@ -77,6 +77,84 @@ function executeModalConfirm() {
 }
 
 // ============================================================
+// FUNGSI PAGINATION UMUM - Berlaku untuk SEMUA tabel
+// Pola: Halaman 1-4: 1 2 3 4 5 … last
+//       Halaman tengah: 1 … (curr-1) curr (curr+1) … last
+//       Halaman akhir: 1 … (last-4) (last-3) (last-2) (last-1) last
+// ============================================================
+function generatePageNumbers(current, total) {
+    if (total <= 1) return [1];
+    
+    const pages = [];
+    const edgeSize = 5;   // jumlah angka di tepi (awal/akhir)
+    const midSize = 3;    // jumlah angka di tengah (curr-1, curr, curr+1)
+    const halfMid = Math.floor(midSize / 2); // 1
+    
+    if (total <= edgeSize + 2) {
+        // Sedikit halaman, tampilkan semua
+        for (let i = 1; i <= total; i++) pages.push(i);
+        return pages;
+    }
+    
+    // Batas kapan dianggap "di tepi"
+    const leftThreshold = 4;           // halaman <= 4: tampilkan 5 angka dari awal
+    const rightThreshold = total - 3;  // halaman >= last-3: tampilkan 5 angka dari akhir
+    
+    if (current <= leftThreshold) {
+        // Dekat awal: 1 2 3 4 5 … last
+        for (let i = 1; i <= edgeSize; i++) pages.push(i);
+        pages.push('ellipsis');
+        pages.push(total);
+    } else if (current >= rightThreshold) {
+        // Dekat akhir: 1 … (last-4) (last-3) (last-2) (last-1) last
+        pages.push(1);
+        pages.push('ellipsis');
+        for (let i = total - edgeSize + 1; i <= total; i++) pages.push(i);
+    } else {
+        // Di tengah: 1 … (curr-1) curr (curr+1) … last
+        pages.push(1);
+        pages.push('ellipsis');
+        for (let i = current - halfMid; i <= current + halfMid; i++) pages.push(i);
+        pages.push('ellipsis');
+        pages.push(total);
+    }
+    
+    return pages;
+}
+
+// Fungsi: Render HTML pagination lengkap (prev + numbers + next)
+function renderPaginationHTML(currentPage, totalPages, pageVarName, onClickFunc) {
+    if (totalPages <= 1) return '';
+    
+    let html = '';
+    
+    // Cek apakah onClickFunc sudah berupa ekspresi lengkap (mengandung tanda kurung)
+    // Jika ya: gunakan apa adanya. Jika tidak: tambahkan ()
+    const buildOnClick = (pageNum) => {
+        const call = onClickFunc.includes('(') ? onClickFunc : `${onClickFunc}()`;
+        return `${pageVarName}=${pageNum};${call}`;
+    };
+    
+    // Tombol Previous
+    html += `<button onclick="${buildOnClick(Math.max(1, currentPage - 1))}" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${currentPage === 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>`;
+    
+    // Nomor halaman
+    const pages = generatePageNumbers(currentPage, totalPages);
+    for (const p of pages) {
+        if (p === 'ellipsis') {
+            html += `<span class="w-8 h-8 flex items-center justify-center text-on-surface-variant font-medium">…</span>`;
+        } else {
+            html += `<button onclick="${buildOnClick(p)}" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${p === currentPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${p}</button>`;
+        }
+    }
+    
+    // Tombol Next
+    html += `<button onclick="${buildOnClick(Math.min(totalPages, currentPage + 1))}" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" ${currentPage === totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>`;
+    
+    return html;
+}
+
+// ============================================================
 // NAVIGASI SIDEBAR
 // ============================================================
 
@@ -156,26 +234,31 @@ async function loadProfilSekolah() {
                     <!-- Identitas Dasar -->
                     <div class="mb-6">
                         <h3 class="font-label-md text-label-md text-primary uppercase tracking-wide mb-3 pb-2 border-b border-outline-variant/30">Identitas Dasar</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">Nama Sekolah</span>
-                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.nama_sekolah)}</span>
+                        <div class="space-y-0">
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">Nama Sekolah</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium flex-1">${v(profil.nama_sekolah)}</span>
                             </div>
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">NPSN</span>
-                                <span class="text-on-surface font-body-md font-medium font-mono text-right">${v(profil.npsn)}</span>
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">NPSN</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium font-mono flex-1">${v(profil.npsn)}</span>
                             </div>
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">Jenjang Pendidikan</span>
-                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.tingkat_sekolah)}</span>
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">Jenjang Pendidikan</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium flex-1">${v(profil.tingkat_sekolah)}</span>
                             </div>
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">Status Sekolah</span>
-                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.status_sekolah)}</span>
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">Status Sekolah</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium flex-1">${v(profil.status_sekolah)}</span>
                             </div>
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">Negara</span>
-                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.negara)}</span>
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">Negara</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium flex-1">${v(profil.negara)}</span>
                             </div>
                         </div>
                     </div>
@@ -183,34 +266,41 @@ async function loadProfilSekolah() {
                     <!-- Alamat Lengkap -->
                     <div class="mb-6">
                         <h3 class="font-label-md text-label-md text-primary uppercase tracking-wide mb-3 pb-2 border-b border-outline-variant/30">Alamat Lengkap</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2 md:col-span-2">
-                                <span class="text-on-surface-variant font-label-md">Alamat</span>
-                                <span class="text-on-surface font-body-md font-medium text-right max-w-md">${v(profil.alamat)}</span>
+                        <div class="space-y-0">
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">Alamat</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium flex-1">${v(profil.alamat)}</span>
                             </div>
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">RT / RW</span>
-                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.rt_rw)}</span>
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">RT / RW</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium flex-1">${v(profil.rt_rw)}</span>
                             </div>
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">Kode Pos</span>
-                                <span class="text-on-surface font-body-md font-medium text-right font-mono">${v(profil.kode_pos)}</span>
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">Kode Pos</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium font-mono flex-1">${v(profil.kode_pos)}</span>
                             </div>
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">Kelurahan / Desa</span>
-                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.kelurahan)}</span>
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">Kelurahan / Desa</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium flex-1">${v(profil.kelurahan)}</span>
                             </div>
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">Kecamatan</span>
-                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.kecamatan)}</span>
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">Kecamatan</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium flex-1">${v(profil.kecamatan)}</span>
                             </div>
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">Kabupaten / Kota</span>
-                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.kabupaten_kota)}</span>
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">Kabupaten / Kota</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium flex-1">${v(profil.kabupaten_kota)}</span>
                             </div>
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">Provinsi</span>
-                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.provinsi)}</span>
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">Provinsi</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium flex-1">${v(profil.provinsi)}</span>
                             </div>
                         </div>
                     </div>
@@ -218,30 +308,36 @@ async function loadProfilSekolah() {
                     <!-- Kontak & Website -->
                     <div class="mb-6">
                         <h3 class="font-label-md text-label-md text-primary uppercase tracking-wide mb-3 pb-2 border-b border-outline-variant/30">Kontak & Website</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">Nomor Telepon</span>
-                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.kontak)}</span>
+                        <div class="space-y-0">
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">Nomor Telepon</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium flex-1">${v(profil.kontak)}</span>
                             </div>
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">Nomor Fax</span>
-                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.nomor_fax)}</span>
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">Nomor Fax</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium flex-1">${v(profil.nomor_fax)}</span>
                             </div>
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">Email</span>
-                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.email)}</span>
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">Email</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium flex-1 break-all">${v(profil.email)}</span>
                             </div>
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">Website</span>
-                                <span class="text-on-surface font-body-md font-medium text-right break-all">${v(profil.website)}</span>
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">Website</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium flex-1 break-all">${v(profil.website)}</span>
                             </div>
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">Lintang (Latitude)</span>
-                                <span class="text-on-surface font-body-md font-medium text-right font-mono">${v(profil.lintang)}</span>
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">Lintang (Latitude)</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium font-mono flex-1">${v(profil.lintang)}</span>
                             </div>
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">Bujur (Longitude)</span>
-                                <span class="text-on-surface font-body-md font-medium text-right font-mono">${v(profil.bujur)}</span>
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">Bujur (Longitude)</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium font-mono flex-1">${v(profil.bujur)}</span>
                             </div>
                         </div>
                     </div>
@@ -249,18 +345,21 @@ async function loadProfilSekolah() {
                     <!-- Kepala Sekolah -->
                     <div class="mb-6">
                         <h3 class="font-label-md text-label-md text-primary uppercase tracking-wide mb-3 pb-2 border-b border-outline-variant/30">Kepala Sekolah</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2 md:col-span-2">
-                                <span class="text-on-surface-variant font-label-md">Nama Lengkap</span>
-                                <span class="text-on-surface font-body-md font-medium text-right">${v(profil.nama_kepala_sekolah)}</span>
+                        <div class="space-y-0">
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">Nama Lengkap</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium flex-1">${v(profil.nama_kepala_sekolah)}</span>
                             </div>
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">NIP</span>
-                                <span class="text-on-surface font-body-md font-medium text-right font-mono">${v(profil.nip_kepala_sekolah)}</span>
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">NIP</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium font-mono flex-1">${v(profil.nip_kepala_sekolah)}</span>
                             </div>
-                            <div class="flex justify-between border-b border-outline-variant/20 py-2">
-                                <span class="text-on-surface-variant font-label-md">NUPTK</span>
-                                <span class="text-on-surface font-body-md font-medium text-right font-mono">${v(profil.nuptk)}</span>
+                            <div class="flex items-start border-b border-outline-variant/20 py-2">
+                                <span class="text-on-surface-variant font-label-md w-52 shrink-0">NUPTK</span>
+                                <span class="text-on-surface-variant font-label-md w-5 shrink-0 text-center">:</span>
+                                <span class="text-on-surface font-body-md font-medium font-mono flex-1">${v(profil.nuptk)}</span>
                             </div>
                         </div>
                     </div>
@@ -460,8 +559,8 @@ async function loadProfilSekolah() {
                     </div>
                     
                     <!-- Footer Modal -->
-                    <div class="px-container-padding py-4 bg-surface-container-low border-t border-outline-variant/30 flex justify-between items-center shrink-0 rounded-b-xl">
-                        <button type="button" onclick="tutupModalEditProfil()" class="px-4 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-colors text-sm">
+                    <div class="px-container-padding py-4 bg-surface-container-low border-t border-outline-variant/30 flex justify-end items-center gap-3 shrink-0 rounded-b-xl">
+                        <button type="button" onclick="tutupModalEditProfil()" class="px-4 py-2 rounded-lg border border-error text-error hover:bg-error-container/30 transition-colors text-sm">
                             Batal
                         </button>
                         <button type="button" onclick="simpanProfilDariModal()" class="px-6 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container transition-colors shadow-sm text-sm inline-flex items-center gap-2">
@@ -546,7 +645,20 @@ async function simpanProfilDariModal() {
     try {
         const sb = getSupabase();
         
-        const { data: existing } = await sb.from('profil_sekolah').select('id').limit(1).maybeSingle();
+        // 🔧 PERBAIKAN: Tambahkan pengecekan error dari Supabase
+        // Supabase JS v2 mengembalikan { data, error } dan TIDAK melempar exception
+        const { data: existing, error: errCek } = await sb.from('profil_sekolah').select('id').limit(1).maybeSingle();
+        
+        if (errCek) {
+            console.error('Error cek data existing:', errCek);
+            hideLoading();
+            let pesan = errCek.message;
+            if (errCek.code === '42P01' || errCek.message?.includes('does not exist') || errCek.message?.includes('tidak ada')) {
+                pesan = 'Tabel "profil_sekolah" BELUM ADA di database Supabase! Silakan buat tabel tersebut terlebih dahulu di Supabase SQL Editor.';
+            }
+            showToast('Gagal: ' + pesan, 'error');
+            return;
+        }
         
         const data = {
             nama_sekolah: document.getElementById('ps_nama_sekolah').value.trim(),
@@ -580,10 +692,25 @@ async function simpanProfilDariModal() {
             return;
         }
         
+        // 🔧 PERBAIKAN: Tambahkan pengecekan error pada update/insert
+        let hasil;
         if (existing && existing.id) {
-            await sb.from('profil_sekolah').update(data).eq('id', existing.id);
+            hasil = await sb.from('profil_sekolah').update(data).eq('id', existing.id);
         } else {
-            await sb.from('profil_sekolah').insert(data);
+            hasil = await sb.from('profil_sekolah').insert(data);
+        }
+        
+        if (hasil.error) {
+            console.error('Error simpan profil:', hasil.error);
+            hideLoading();
+            let pesan = hasil.error.message;
+            if (hasil.error.code === '42P01' || hasil.error.message?.includes('does not exist')) {
+                pesan = 'Tabel "profil_sekolah" BELUM ADA di database Supabase! Silakan buat tabel tersebut terlebih dahulu.';
+            } else if (hasil.error.code === '42501' || hasil.error.message?.includes('permission denied') || hasil.error.message?.includes('policy')) {
+                pesan = 'Akses ditolak! Pastikan RLS (Row Level Security) di tabel "profil_sekolah" sudah diatur dengan benar atau matikan RLS untuk testing.';
+            }
+            showToast('Gagal menyimpan: ' + pesan, 'error');
+            return;
         }
         
         if (data.nama_sekolah) {
@@ -597,6 +724,7 @@ async function simpanProfilDariModal() {
         loadProfilSekolah(); // Refresh tampilan
     } catch (e) {
         hideLoading();
+        console.error('Exception simpan profil:', e);
         showToast('Gagal menyimpan: ' + e.message, 'error');
     }
 }
@@ -711,10 +839,10 @@ function handleUploadProfilTemplate(event) {
             preview.textContent = `✅ Data dari template berhasil dimuat! ${fieldTerisi} kolom terisi. Silakan klik "Simpan Perubahan" di bawah untuk menyimpan ke database.`;
             preview.classList.remove('hidden');
             
-            // Otomatis pindah ke tab Edit Manual agar user bisa melihat data yang terisi
-            switchModalTab('modalTabManual');
+            // Tetap di tab Template Excel sesuai permintaan pengguna
+            // Data sudah terisi otomatis ke form di tab Edit Manual di belakang layar
             
-            showToast(`Template berhasil dibaca! ${fieldTerisi} kolom data dimuat.`, 'success');
+            showToast(`Template berhasil dibaca! ${fieldTerisi} kolom data dimuat. Klik "Simpan Perubahan" di bawah untuk menyimpan ke database.`, 'success');
         } catch (err) {
             showToast('Gagal membaca file: ' + err.message, 'error');
             console.error('Error parsing Excel:', err);
@@ -1317,49 +1445,7 @@ function renderSiswaTable(data) {
     document.getElementById('paginationInfo').textContent = `Menampilkan ${start + 1}-${Math.min(start + siswaPerPage, data.length)} dari ${data.length} data`;
     
     const totalPages = Math.ceil(data.length / siswaPerPage);
-    let html = '';
-    
-    // Tombol Previous
-    html += `<button onclick="siswaPage=${Math.max(1, siswaPage - 1)};filterSiswa()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${siswaPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${siswaPage === 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>`;
-    
-
-    // Nomor halaman (dipersingkat dengan ellipsis)
-    const maxVisible = 5; // Jumlah tombol nomor yang ditampilkan
-    let pages = [];
-    if (totalPages <= maxVisible + 2) {
-        // Jika sedikit halaman, tampilkan semua
-        for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else if (siswaPage <= maxVisible) {
-        // Halaman aktif di bagian awal: 1 2 3 4 5 … last
-        for (let i = 1; i <= maxVisible; i++) pages.push(i);
-        pages.push('ellipsis');
-        pages.push(totalPages);
-    } else if (siswaPage >= totalPages - maxVisible + 1) {
-        // Halaman aktif di bagian akhir: 1 … (last-4) (last-3) (last-2) (last-1) last
-        pages.push(1);
-        pages.push('ellipsis');
-        for (let i = totalPages - maxVisible + 1; i <= totalPages; i++) pages.push(i);
-    } else {
-        // Halaman aktif di tengah: 1 … (curr-2) (curr-1) curr (curr+1) (curr+2) … last
-        pages.push(1);
-        pages.push('ellipsis');
-        for (let i = siswaPage - 2; i <= siswaPage + 2; i++) pages.push(i);
-        pages.push('ellipsis');
-        pages.push(totalPages);
-    }
-    
-    // Render tombol-tombol halaman
-    for (const p of pages) {
-        if (p === 'ellipsis') {
-            html += `<span class="w-8 h-8 flex items-center justify-center text-on-surface-variant font-medium">…</span>`;
-        } else {
-            html += `<button onclick="siswaPage=${p};filterSiswa()" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${p === siswaPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${p}</button>`;
-        }
-    }
-    
-    // Tombol Next
-    html += `<button onclick="siswaPage=${Math.min(totalPages, siswaPage + 1)};filterSiswa()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${siswaPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" ${siswaPage === totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>`;
-    
+    const html = renderPaginationHTML(siswaPage, totalPages, 'siswaPage', 'filterSiswa');
     document.getElementById('paginationButtons').innerHTML = html;
 }
 
@@ -1613,49 +1699,7 @@ function renderMapelTable(data) {
     document.getElementById('paginationInfoMapel').textContent = `Menampilkan ${start + 1}-${Math.min(start + mapelPerPage, data.length)} dari ${data.length} data`;
     
     const totalPages = Math.ceil(data.length / mapelPerPage);
-    let html = '';
-    
-    // Tombol Previous
-    html += `<button onclick="mapelPage=${Math.max(1, mapelPage - 1)};filterMapel()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${mapelPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${mapelPage === 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>`;
-    
-
-    // Nomor halaman (dipersingkat dengan ellipsis)
-    const maxVisible = 5; // Jumlah tombol nomor yang ditampilkan
-    let pages = [];
-    if (totalPages <= maxVisible + 2) {
-        // Jika sedikit halaman, tampilkan semua
-        for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else if (mapelPage <= maxVisible) {
-        // Halaman aktif di bagian awal: 1 2 3 4 5 … last
-        for (let i = 1; i <= maxVisible; i++) pages.push(i);
-        pages.push('ellipsis');
-        pages.push(totalPages);
-    } else if (mapelPage >= totalPages - maxVisible + 1) {
-        // Halaman aktif di bagian akhir: 1 … (last-4) (last-3) (last-2) (last-1) last
-        pages.push(1);
-        pages.push('ellipsis');
-        for (let i = totalPages - maxVisible + 1; i <= totalPages; i++) pages.push(i);
-    } else {
-        // Halaman aktif di tengah: 1 … (curr-2) (curr-1) curr (curr+1) (curr+2) … last
-        pages.push(1);
-        pages.push('ellipsis');
-        for (let i = mapelPage - 2; i <= mapelPage + 2; i++) pages.push(i);
-        pages.push('ellipsis');
-        pages.push(totalPages);
-    }
-    
-    // Render tombol-tombol halaman
-    for (const p of pages) {
-        if (p === 'ellipsis') {
-            html += `<span class="w-8 h-8 flex items-center justify-center text-on-surface-variant font-medium">…</span>`;
-        } else {
-            html += `<button onclick="mapelPage=${p};filterMapel()" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${p === mapelPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${p}</button>`;
-        }
-    }
-    
-    // Tombol Next
-    html += `<button onclick="mapelPage=${Math.min(totalPages, mapelPage + 1)};filterMapel()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${mapelPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" ${mapelPage === totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>`;
-    
+    const html = renderPaginationHTML(mapelPage, totalPages, 'mapelPage', 'filterMapel');
     document.getElementById('paginationButtonsMapel').innerHTML = html;
 }
 
@@ -1960,49 +2004,7 @@ function renderJadwalTable(data) {
     
     // Generate tombol halaman - SAMA PERSIS dengan Rekap Presensi
     const totalPages = Math.ceil(data.length / jadwalPerPage);
-    let buttonsHtml = '';
-    
-    // Tombol Previous
-    buttonsHtml += `<button onclick="jadwalPage=${Math.max(1, jadwalPage - 1)};filterJadwal()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${jadwalPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${jadwalPage === 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>`;
-    
-
-    // Nomor halaman (dipersingkat dengan ellipsis)
-    const maxVisible = 5; // Jumlah tombol nomor yang ditampilkan
-    let pages = [];
-    if (totalPages <= maxVisible + 2) {
-        // Jika sedikit halaman, tampilkan semua
-        for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else if (jadwalPage <= maxVisible) {
-        // Halaman aktif di bagian awal: 1 2 3 4 5 … last
-        for (let i = 1; i <= maxVisible; i++) pages.push(i);
-        pages.push('ellipsis');
-        pages.push(totalPages);
-    } else if (jadwalPage >= totalPages - maxVisible + 1) {
-        // Halaman aktif di bagian akhir: 1 … (last-4) (last-3) (last-2) (last-1) last
-        pages.push(1);
-        pages.push('ellipsis');
-        for (let i = totalPages - maxVisible + 1; i <= totalPages; i++) pages.push(i);
-    } else {
-        // Halaman aktif di tengah: 1 … (curr-2) (curr-1) curr (curr+1) (curr+2) … last
-        pages.push(1);
-        pages.push('ellipsis');
-        for (let i = jadwalPage - 2; i <= jadwalPage + 2; i++) pages.push(i);
-        pages.push('ellipsis');
-        pages.push(totalPages);
-    }
-    
-    // Render tombol-tombol halaman
-    for (const p of pages) {
-        if (p === 'ellipsis') {
-            buttonsHtml += `<span class="w-8 h-8 flex items-center justify-center text-on-surface-variant font-medium">…</span>`;
-        } else {
-            buttonsHtml += `<button onclick="jadwalPage=${p};filterJadwal()" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${p === jadwalPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${p}</button>`;
-        }
-    }
-    
-    // Tombol Next
-    buttonsHtml += `<button onclick="jadwalPage=${Math.min(totalPages, jadwalPage + 1)};filterJadwal()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${jadwalPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" ${jadwalPage === totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>`;
-    
+    const buttonsHtml = renderPaginationHTML(jadwalPage, totalPages, 'jadwalPage', 'filterJadwal');
     document.getElementById('paginationButtonsJadwal').innerHTML = buttonsHtml;
 }
 
@@ -2408,49 +2410,7 @@ function renderQRTable(data) {
     
     // Generate tombol halaman
     const totalPages = Math.ceil(data.length / qrPerPage);
-    let buttonsHtml = '';
-    
-    // Tombol Previous
-    buttonsHtml += `<button onclick="qrPage=${Math.max(1, qrPage - 1)};renderQRTable(window.currentQRFiltered || allQRData)" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${qrPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${qrPage === 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>`;
-    
-
-    // Nomor halaman (dipersingkat dengan ellipsis)
-    const maxVisible = 5; // Jumlah tombol nomor yang ditampilkan
-    let pages = [];
-    if (totalPages <= maxVisible + 2) {
-        // Jika sedikit halaman, tampilkan semua
-        for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else if (qrPage <= maxVisible) {
-        // Halaman aktif di bagian awal: 1 2 3 4 5 … last
-        for (let i = 1; i <= maxVisible; i++) pages.push(i);
-        pages.push('ellipsis');
-        pages.push(totalPages);
-    } else if (qrPage >= totalPages - maxVisible + 1) {
-        // Halaman aktif di bagian akhir: 1 … (last-4) (last-3) (last-2) (last-1) last
-        pages.push(1);
-        pages.push('ellipsis');
-        for (let i = totalPages - maxVisible + 1; i <= totalPages; i++) pages.push(i);
-    } else {
-        // Halaman aktif di tengah: 1 … (curr-2) (curr-1) curr (curr+1) (curr+2) … last
-        pages.push(1);
-        pages.push('ellipsis');
-        for (let i = qrPage - 2; i <= qrPage + 2; i++) pages.push(i);
-        pages.push('ellipsis');
-        pages.push(totalPages);
-    }
-    
-    // Render tombol-tombol halaman
-    for (const p of pages) {
-        if (p === 'ellipsis') {
-            buttonsHtml += `<span class="w-8 h-8 flex items-center justify-center text-on-surface-variant font-medium">…</span>`;
-        } else {
-            buttonsHtml += `<button onclick="qrPage=${p};renderQRTable(window.currentQRFiltered || allQRData)" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${p === qrPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${p}</button>`;
-        }
-    }
-    
-    // Tombol Next
-    buttonsHtml += `<button onclick="qrPage=${Math.min(totalPages, qrPage + 1)};renderQRTable(window.currentQRFiltered || allQRData)" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${qrPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" ${qrPage === totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>`;
-    
+    const buttonsHtml = renderPaginationHTML(qrPage, totalPages, 'qrPage', 'renderQRTable(window.currentQRFiltered || allQRData)');
     document.getElementById('paginationButtonsQR').innerHTML = buttonsHtml;
 }
 
@@ -3481,6 +3441,27 @@ function loadPusatUnduhan() {
                     </div>
                 </div>
                 
+                <!-- Card: Profil Sekolah -->
+                <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden hover:shadow-md transition-shadow">
+                    <div class="p-container-padding">
+                        <div class="flex items-start gap-4 mb-4">
+                            <div class="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-indigo-600 text-[24px]">school</span>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Profil Sekolah</h3>
+                                <p class="text-sm text-on-surface-variant">Data identitas lengkap sekolah, alamat, kontak, dan informasi kepala sekolah.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-4 border-t border-outline-variant/30">
+                            <span class="text-xs text-on-surface-variant">Format: Excel</span>
+                            <button onclick="showToast('Fitur unduh Profil Sekolah belum tersedia.', 'info')" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm text-sm">
+                                <span class="material-symbols-outlined text-[18px]">download</span>Unduh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
             </div>
         </div>
     `;
@@ -3492,6 +3473,7 @@ function loadPusatUnduhan() {
 
 let rekapPage = 1;
 const rekapPerPage = 10;
+let allRekapData = []; // Variabel global untuk menyimpan data rekap di memori
 
 async function loadRekapAbsen() {
     const contentArea = document.getElementById('content-area');
@@ -3643,10 +3625,13 @@ async function loadRekapData() {
             }
         });
         
-        const rekapArray = Object.values(rekap);
+        // Simpan ke variabel global untuk digunakan saat pindah halaman (tanpa loading)
+        allRekapData = Object.values(rekap);
+        rekapPage = 1; // Reset ke halaman 1 saat filter berubah
         
+        // Update statistik
         let totalHadir = 0, totalTerlambat = 0, totalSakit = 0, totalIzin = 0, totalAlpa = 0;
-        rekapArray.forEach(r => {
+        allRekapData.forEach(r => {
             totalHadir += r.hadir;
             totalTerlambat += r.terlambat;
             totalSakit += r.sakit;
@@ -3660,91 +3645,8 @@ async function loadRekapData() {
         document.getElementById('statTotalSakit').textContent = totalSakit + totalIzin;
         document.getElementById('statTotalAlpa').textContent = totalAlpa;
         
-        const tbody = document.getElementById('tableRekap');
-        if (rekapArray.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-on-surface-variant">Tidak ada data rekap.</td></tr>';
-            document.getElementById('paginationRekap').textContent = 'Menampilkan 0 data';
-            document.getElementById('paginationButtonsRekap').innerHTML = '';
-        } else {
-            const start = (rekapPage - 1) * rekapPerPage;
-            const pageData = rekapArray.slice(start, start + rekapPerPage);
-            
-            tbody.innerHTML = pageData.map((r, i) => {
-                const total = r.hadir + r.terlambat + r.sakit + r.izin + r.alpa || 1;
-                const persentase = Math.round(((r.hadir + r.terlambat) / total) * 100);
-                const nilai = Math.max(0, 100 - (r.alpa * 5) - (r.terlambat * 2));
-                
-                const persenColor = persentase >= 90 ? 'text-green-600 bg-green-100' : 
-                                   persentase >= 75 ? 'text-amber-600 bg-amber-100' : 'text-error bg-error-container';
-                const nilaiColor = nilai >= 90 ? 'text-green-600' : nilai >= 75 ? 'text-amber-600' : 'text-error';
-                
-                return `
-                <tr class="border-b border-surface-container-highest table-row-hover">
-                    <td class="p-4 text-center text-on-surface-variant">${i + 1}</td>
-                    <td class="p-4 font-semibold">${r.nama}</td>
-                    <td class="p-4">${r.kelas} ${r.jurusan}</td>
-                    <td class="p-4 text-center font-semibold text-green-600">${r.hadir}</td>
-                    <td class="p-4 text-center text-amber-600">${r.terlambat}</td>
-                    <td class="p-4 text-center text-blue-600">${r.sakit}</td>
-                    <td class="p-4 text-center text-purple-600">${r.izin}</td>
-                    <td class="p-4 text-center text-error">${r.alpa}</td>
-                    <td class="p-4 text-center">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${persenColor}">${persentase}%</span>
-                    </td>
-                    <td class="p-4 text-center font-bold ${nilaiColor} text-lg">${nilai}</td>
-                </tr>`;
-            }).join('');
-            
-            // Update info pagination
-            document.getElementById('paginationRekap').textContent = `Menampilkan ${start + 1}-${Math.min(start + rekapPerPage, rekapArray.length)} dari ${rekapArray.length} data`;
-            
-            // Generate tombol halaman
-            const totalPages = Math.ceil(rekapArray.length / rekapPerPage);
-            let buttonsHtml = '';
-            
-            // Tombol Previous
-            buttonsHtml += `<button onclick="rekapPage=${Math.max(1, rekapPage - 1)};loadRekapData()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${rekapPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${rekapPage === 1 ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_left</span></button>`;
-            
-
-        // Nomor halaman (dipersingkat dengan ellipsis)
-        const maxVisible = 5; // Jumlah tombol nomor yang ditampilkan
-        let pages = [];
-        if (totalPages <= maxVisible + 2) {
-            // Jika sedikit halaman, tampilkan semua
-            for (let i = 1; i <= totalPages; i++) pages.push(i);
-        } else if (rekapPage <= maxVisible) {
-            // Halaman aktif di bagian awal: 1 2 3 4 5 … last
-            for (let i = 1; i <= maxVisible; i++) pages.push(i);
-            pages.push('ellipsis');
-            pages.push(totalPages);
-        } else if (rekapPage >= totalPages - maxVisible + 1) {
-            // Halaman aktif di bagian akhir: 1 … (last-4) (last-3) (last-2) (last-1) last
-            pages.push(1);
-            pages.push('ellipsis');
-            for (let i = totalPages - maxVisible + 1; i <= totalPages; i++) pages.push(i);
-        } else {
-            // Halaman aktif di tengah: 1 … (curr-2) (curr-1) curr (curr+1) (curr+2) … last
-            pages.push(1);
-            pages.push('ellipsis');
-            for (let i = rekapPage - 2; i <= rekapPage + 2; i++) pages.push(i);
-            pages.push('ellipsis');
-            pages.push(totalPages);
-        }
-        
-        // Render tombol-tombol halaman
-        for (const p of pages) {
-            if (p === 'ellipsis') {
-                buttonsHtml += `<span class="w-8 h-8 flex items-center justify-center text-on-surface-variant font-medium">…</span>`;
-            } else {
-                buttonsHtml += `<button onclick="rekapPage=${p};loadRekapData()" class="w-8 h-8 rounded font-label-md flex items-center justify-center ${p === rekapPage ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container transition-colors'}">${p}</button>`;
-            }
-        }
-            
-            // Tombol Next
-            buttonsHtml += `<button onclick="rekapPage=${Math.min(totalPages, rekapPage + 1)};loadRekapData()" class="p-1 rounded text-on-surface-variant hover:bg-surface-container transition-colors ${rekapPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" ${rekapPage === totalPages ? 'disabled' : ''}><span class="material-symbols-outlined">chevron_right</span></button>`;
-            
-            document.getElementById('paginationButtonsRekap').innerHTML = buttonsHtml;
-        }
+        // Render tabel dari data yang sudah ada di memori (TANPA loading)
+        renderRekapTable();
         
         hideLoading();
         
@@ -3752,6 +3654,59 @@ async function loadRekapData() {
         hideLoading();
         showToast('Gagal memuat: ' + e.message, 'error');
     }
+}
+
+// ============================================================
+// FUNGSI: Render tabel rekap dari data di memori (TANPA loading)
+// Dipanggil saat pindah halaman pagination
+// ============================================================
+function renderRekapTable() {
+    const tbody = document.getElementById('tableRekap');
+    const rekapArray = allRekapData;
+    
+    if (rekapArray.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-on-surface-variant">Tidak ada data rekap.</td></tr>';
+        document.getElementById('paginationRekap').textContent = 'Menampilkan 0 data';
+        document.getElementById('paginationButtonsRekap').innerHTML = '';
+        return;
+    }
+    
+    const start = (rekapPage - 1) * rekapPerPage;
+    const pageData = rekapArray.slice(start, start + rekapPerPage);
+    
+    tbody.innerHTML = pageData.map((r, i) => {
+        const total = r.hadir + r.terlambat + r.sakit + r.izin + r.alpa || 1;
+        const persentase = Math.round(((r.hadir + r.terlambat) / total) * 100);
+        const nilai = Math.max(0, 100 - (r.alpa * 5) - (r.terlambat * 2));
+        
+        const persenColor = persentase >= 90 ? 'text-green-600 bg-green-100' : 
+                           persentase >= 75 ? 'text-amber-600 bg-amber-100' : 'text-error bg-error-container';
+        const nilaiColor = nilai >= 90 ? 'text-green-600' : nilai >= 75 ? 'text-amber-600' : 'text-error';
+        
+        return `
+        <tr class="border-b border-surface-container-highest table-row-hover">
+            <td class="p-4 text-center text-on-surface-variant">${start + i + 1}</td>
+            <td class="p-4 font-semibold">${r.nama}</td>
+            <td class="p-4">${r.kelas} ${r.jurusan}</td>
+            <td class="p-4 text-center font-semibold text-green-600">${r.hadir}</td>
+            <td class="p-4 text-center text-amber-600">${r.terlambat}</td>
+            <td class="p-4 text-center text-blue-600">${r.sakit}</td>
+            <td class="p-4 text-center text-purple-600">${r.izin}</td>
+            <td class="p-4 text-center text-error">${r.alpa}</td>
+            <td class="p-4 text-center">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${persenColor}">${persentase}%</span>
+            </td>
+            <td class="p-4 text-center font-bold ${nilaiColor} text-lg">${nilai}</td>
+        </tr>`;
+    }).join('');
+    
+    // Update info pagination
+    document.getElementById('paginationRekap').textContent = `Menampilkan ${start + 1}-${Math.min(start + rekapPerPage, rekapArray.length)} dari ${rekapArray.length} data`;
+    
+    // Generate tombol halaman (panggil renderRekapTable, BUKAN loadRekapData)
+    const totalPages = Math.ceil(rekapArray.length / rekapPerPage);
+    const buttonsHtml = renderPaginationHTML(rekapPage, totalPages, 'rekapPage', 'renderRekapTable');
+    document.getElementById('paginationButtonsRekap').innerHTML = buttonsHtml;
 }
 
 function exportRekapExcel() {
