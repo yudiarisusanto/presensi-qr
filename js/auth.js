@@ -70,8 +70,31 @@ async function doLogin() {
                 currentUser.nisn = siswa.nisn;
                 currentUser.siswa_id = siswa.id;
             }
-        } else {
+        } else if (userData.level === 'admin') {
+            // Untuk admin: coba ambil data dari profil_admin jika tersedia
             currentUser.nama = 'Administrator';
+            currentUser.nama_lengkap = 'Administrator';
+            try {
+                const { data: profilAdmin } = await sb
+                    .from('profil_admin')
+                    .select('nama_lengkap, jabatan, foto_profil')
+                    .eq('user_id', userData.id)
+                    .maybeSingle();
+                
+                if (profilAdmin && profilAdmin.nama_lengkap) {
+                    currentUser.nama = profilAdmin.nama_lengkap;
+                    currentUser.nama_lengkap = profilAdmin.nama_lengkap;
+                    if (profilAdmin.jabatan) currentUser.jabatan = profilAdmin.jabatan;
+                    if (profilAdmin.foto_profil) {
+                        localStorage.setItem('presensiQR_fotoProfil', profilAdmin.foto_profil);
+                    }
+                }
+            } catch (e) {
+                console.warn('Gagal memuat profil admin saat login:', e.message);
+            }
+        } else {
+            currentUser.nama = 'Pengguna';
+            currentUser.nama_lengkap = 'Pengguna';
         }
         
         // Simpan ke localStorage

@@ -3097,17 +3097,46 @@ async function loadInfoJadwalSekarang() {
 }
 
 // ============================================================
-// PROFIL PENGGUNA
+// PROFIL PENGGUNA (VERSI DATABASE - profil_admin)
 // ============================================================
-function loadProfilPengguna() {
+async function loadProfilPengguna() {
     const contentArea = document.getElementById('content-area');
     
     // Ambil data user dari session
     const userData = currentUser || {};
-    const namaUser = userData.nama_lengkap || userData.username || 'Admin Guru';
     const username = userData.username || 'admin';
     const level = userData.level || 'Administrator';
+    
+    // Ambil data profil dari database
+    let profilDB = {};
+    try {
+        const sb = getSupabase();
+        if (sb && currentUser && currentUser.id) {
+            const { data } = await sb
+                .from('profil_admin')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .maybeSingle();
+            
+            if (data) {
+                profilDB = data;
+            }
+        }
+    } catch (e) {
+        console.error('Gagal memuat profil admin dari database:', e);
+        // Fallback: coba dari localStorage jika database gagal
+        const stored = localStorage.getItem('presensiQR_profilAdmin');
+        if (stored) {
+            try { profilDB = JSON.parse(stored); } catch(e) {}
+        }
+    }
+    
+    // Nama user: prioritas dari database, lalu currentUser, lalu default
+    const namaUser = profilDB.nama_lengkap || userData.nama_lengkap || userData.nama || userData.username || 'Admin Guru';
     const inisial = namaUser.charAt(0).toUpperCase();
+    
+    // Cek foto profil: dari database, lalu localStorage, lalu default
+    let fotoProfil = profilDB.foto_profil || localStorage.getItem('presensiQR_fotoProfil') || '';
     
     contentArea.innerHTML = `
         <div>
@@ -3116,17 +3145,23 @@ function loadProfilPengguna() {
                 <p class="font-body-md text-body-md text-on-surface-variant">Kelola informasi profil dan kredensial akun administrator Anda.</p>
             </div>
 
-            <!-- Grid Layout - Card kiri dibuat lebih lebar (5/12) -->
+            <!-- Grid Layout -->
             <div class="grid grid-cols-1 md:grid-cols-12 gap-stack-md">
 
-                <!-- Profile Picture Card (Left Col - Lebih lebar 5/12) -->
+                <!-- Profile Picture Card (Left Col - 5/12) -->
                 <div class="md:col-span-5 bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant flex flex-col text-center">
                     <div class="bg-primary-container rounded-t-xl p-6 flex flex-col items-center text-center">
                         <div class="relative mb-4 group">
-                            <div class="w-32 h-32 rounded-full bg-primary flex items-center justify-center border-4 border-surface shadow-md">
-                                <span class="text-on-primary font-bold text-headline-lg">${inisial}</span>
-                            </div>
-                            <button onclick="document.getElementById('fotoProfilInput').click()" class="absolute bottom-0 right-0 bg-surface-container-high text-primary w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:bg-surface-container-highest transition-colors">
+                            ${fotoProfil ? `
+                                <img src="${fotoProfil}" alt="Foto Profil" 
+                                    class="w-32 h-32 rounded-full object-cover border-4 border-surface shadow-md">
+                            ` : `
+                                <div class="w-32 h-32 rounded-full bg-primary flex items-center justify-center border-4 border-surface shadow-md">
+                                    <span class="text-on-primary font-bold text-headline-lg">${inisial}</span>
+                                </div>
+                            `}
+                            <button onclick="document.getElementById('fotoProfilInput').click()" 
+                                class="absolute bottom-0 right-0 bg-surface-container-high text-primary w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:bg-surface-container-highest transition-colors">
                                 <span class="material-symbols-outlined text-sm">photo_camera</span>
                             </button>
                             <input type="file" id="fotoProfilInput" accept="image/*" class="hidden" onchange="handleFotoProfilUpload(event)">
@@ -3157,11 +3192,13 @@ function loadProfilPengguna() {
                             </div>
                         </div>
                         <div class="w-full border-t border-outline-variant pt-stack-md">
-                            <button onclick="document.getElementById('fotoProfilInput').click()" class="w-full font-label-md py-2 px-4 rounded-lg transition-colors border border-primary flex items-center justify-center gap-2 text-primary hover:bg-primary/5">
+                            <button onclick="document.getElementById('fotoProfilInput').click()" 
+                                class="w-full font-label-md py-2 px-4 rounded-lg transition-colors border border-primary flex items-center justify-center gap-2 text-primary hover:bg-primary/5">
                                 <span class="material-symbols-outlined text-sm">upload</span>
                                 Unggah Foto Baru
                             </button>
-                            <button onclick="loadPage('pengaturan')" class="w-full mt-3 bg-surface-container-lowest hover:bg-surface-container text-primary font-label-md py-2 px-4 rounded-lg transition-colors border flex items-center justify-center gap-2 border-primary">
+                            <button onclick="loadPage('pengaturan')" 
+                                class="w-full mt-3 bg-surface-container-lowest hover:bg-surface-container text-primary font-label-md py-2 px-4 rounded-lg transition-colors border flex items-center justify-center gap-2 border-primary">
                                 <span class="material-symbols-outlined text-sm">manage_accounts</span>
                                 Kelola Akun Admin
                             </button>
@@ -3180,34 +3217,53 @@ function loadProfilPengguna() {
                             <!-- Full Name -->
                             <div>
                                 <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="fullName">Nama Lengkap</label>
-                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" id="fullName" type="text" value="${namaUser}">
+                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" 
+                                    id="fullName" type="text" value="${profilDB.nama_lengkap || namaUser}">
                             </div>
                             <!-- NIP -->
                             <div>
                                 <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="nip">NIP / ID Pegawai</label>
-                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" id="nip" type="text" value="198001012005011003">
+                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all font-mono" 
+                                    id="nip" type="text" value="${profilDB.nip || ''}">
+                            </div>
+                            <!-- NUPTK -->
+                            <div>
+                                <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="nuptk">NUPTK</label>
+                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all font-mono" 
+                                    id="nuptk" type="text" value="${profilDB.nuptk || ''}" placeholder="Nomor Unik Pendidik dan Tenaga Kependidikan">
+                            </div>
+                            <!-- Jabatan -->
+                            <div>
+                                <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="jabatan">Jabatan</label>
+                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" 
+                                    id="jabatan" type="text" value="${profilDB.jabatan || 'Administrator'}">
                             </div>
                             <!-- Email -->
                             <div class="md:col-span-2">
                                 <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="email">Alamat Email</label>
-                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" id="email" type="email" value="admin.guru@smkn1.sch.id">
+                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" 
+                                    id="email" type="email" value="${profilDB.email || ''}">
                             </div>
                             <!-- Phone -->
                             <div class="md:col-span-2">
                                 <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="phone">Nomor Telepon</label>
-                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" id="phone" type="tel" value="+62 812 3456 7890">
+                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" 
+                                    id="phone" type="tel" value="${profilDB.telepon || ''}">
                             </div>
                             <!-- Address -->
                             <div class="md:col-span-2">
                                 <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="address">Alamat Lengkap</label>
-                                <textarea class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all resize-none" id="address" rows="3">Jl. Pendidikan No. 123, Kota Pelajar, Provinsi Ilmu Pengetahuan</textarea>
+                                <textarea class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all resize-none" 
+                                    id="address" rows="3">${profilDB.alamat || ''}</textarea>
                             </div>
                         </div>
                         <div class="flex justify-end gap-3 mt-stack-lg pt-stack-md border-t border-outline-variant">
-                            <button class="px-6 py-2 rounded-lg font-label-md text-primary border border-transparent hover:bg-surface-container transition-colors" type="button" onclick="loadProfilPengguna()">
+                            <button class="px-6 py-2 rounded-lg font-label-md text-primary border border-transparent hover:bg-surface-container transition-colors" 
+                                type="button" onclick="loadProfilPengguna()">
                                 Batal
                             </button>
-                            <button class="px-6 py-2 rounded-lg font-label-md bg-primary text-on-primary hover:bg-primary-container transition-colors shadow-sm" type="submit">
+                            <button class="px-6 py-2 rounded-lg font-label-md bg-primary text-on-primary hover:bg-primary-container transition-colors shadow-sm" 
+                                type="submit" id="btnSimpanProfil">
                                 Simpan Perubahan
                             </button>
                         </div>
@@ -3220,9 +3276,9 @@ function loadProfilPengguna() {
 }
 
 // ============================================================
-// FUNGSI: Handle Upload Foto Profil
+// FUNGSI: Handle Upload Foto Profil (SIMPAN KE DATABASE)
 // ============================================================
-function handleFotoProfilUpload(event) {
+async function handleFotoProfilUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
     
@@ -3231,47 +3287,169 @@ function handleFotoProfilUpload(event) {
         return;
     }
     
+    showLoading('Mengunggah foto...');
+    
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
+        const fotoBase64 = e.target.result;
+        
         try {
-            localStorage.setItem('presensiQR_fotoProfil', e.target.result);
+            const sb = getSupabase();
+            if (sb && currentUser && currentUser.id) {
+                // Cek apakah profil sudah ada di database
+                const { data: existing } = await sb
+                    .from('profil_admin')
+                    .select('id')
+                    .eq('user_id', currentUser.id)
+                    .maybeSingle();
+                
+                if (existing) {
+                    // Update foto profil di database
+                    await sb
+                        .from('profil_admin')
+                        .update({ 
+                            foto_profil: fotoBase64,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', existing.id);
+                } else {
+                    // Insert profil baru (jika belum ada)
+                    await sb
+                        .from('profil_admin')
+                        .insert({
+                            user_id: currentUser.id,
+                            nama_lengkap: currentUser.nama_lengkap || currentUser.nama || currentUser.username || 'Admin',
+                            foto_profil: fotoBase64
+                        });
+                }
+            }
+            
+            // Simpan juga di localStorage sebagai cache
+            localStorage.setItem('presensiQR_fotoProfil', fotoBase64);
+            
+            hideLoading();
             showToast('Foto profil berhasil diunggah!', 'success');
             loadProfilPengguna(); // Reload untuk menampilkan foto baru
+            
         } catch(err) {
-            showToast('Gagal menyimpan foto!', 'error');
+            console.error('Gagal menyimpan foto ke database:', err);
+            hideLoading();
+            showToast('Gagal menyimpan foto ke database!', 'error');
         }
     };
     reader.readAsDataURL(file);
 }
 
 // ============================================================
-// FUNGSI: Simpan Profil Pengguna
+// FUNGSI: Simpan Profil Pengguna (KE DATABASE)
 // ============================================================
-function simpanProfilPengguna() {
-    showLoading('Menyimpan...');
-    setTimeout(() => {
-        // Simpan data sederhana (dalam implementasi nyata, simpan ke database)
-        const profil = {
-            nama_lengkap: document.getElementById('fullName').value,
-            nip: document.getElementById('nip').value,
-            email: document.getElementById('email').value,
-            telepon: document.getElementById('phone').value,
-            alamat: document.getElementById('address').value
-        };
-        
-        try {
-            localStorage.setItem('presensiQR_profilAdmin', JSON.stringify(profil));
-            // Update currentUser
-            if (currentUser) {
-                currentUser.nama_lengkap = profil.nama_lengkap;
-            }
-            hideLoading();
-            showToast('Profil berhasil disimpan!', 'success');
-        } catch(e) {
-            hideLoading();
-            showToast('Gagal menyimpan profil!', 'error');
+async function simpanProfilPengguna() {
+    showLoading('Menyimpan ke database...');
+    
+    const profil = {
+        nama_lengkap: document.getElementById('fullName').value.trim(),
+        nip: document.getElementById('nip').value.trim(),
+        nuptk: document.getElementById('nuptk').value.trim(),
+        jabatan: document.getElementById('jabatan').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        telepon: document.getElementById('phone').value.trim(),
+        alamat: document.getElementById('address').value.trim()
+    };
+    
+    // Validasi sederhana
+    if (!profil.nama_lengkap) {
+        hideLoading();
+        showToast('Nama lengkap tidak boleh kosong!', 'error');
+        return;
+    }
+    
+    try {
+        const sb = getSupabase();
+        if (!sb || !currentUser || !currentUser.id) {
+            throw new Error('Supabase atau user tidak tersedia. Pastikan currentUser memiliki properti .id');
         }
-    }, 500);
+        
+        // Cek apakah profil sudah ada
+        const { data: existing } = await sb
+            .from('profil_admin')
+            .select('id')
+            .eq('user_id', currentUser.id)
+            .maybeSingle();
+        
+        if (existing) {
+            // UPDATE data yang sudah ada
+            await sb
+                .from('profil_admin')
+                .update({
+                    nama_lengkap: profil.nama_lengkap,
+                    nip: profil.nip,
+                    nuptk: profil.nuptk,
+                    jabatan: profil.jabatan,
+                    email: profil.email,
+                    telepon: profil.telepon,
+                    alamat: profil.alamat,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', existing.id);
+        } else {
+            // INSERT data baru
+            await sb
+                .from('profil_admin')
+                .insert({
+                    user_id: currentUser.id,
+                    nama_lengkap: profil.nama_lengkap,
+                    nip: profil.nip,
+                    nuptk: profil.nuptk,
+                    jabatan: profil.jabatan,
+                    email: profil.email,
+                    telepon: profil.telepon,
+                    alamat: profil.alamat
+                });
+        }
+        
+        // Update currentUser agar nama di header berubah
+        if (currentUser) {
+            currentUser.nama_lengkap = profil.nama_lengkap;
+            currentUser.nama = profil.nama_lengkap; // untuk kompatibilitas
+        }
+        
+        // Simpan juga di localStorage sebagai cache/fallback
+        localStorage.setItem('presensiQR_profilAdmin', JSON.stringify(profil));
+        
+        hideLoading();
+        showToast('Profil berhasil disimpan ke database!', 'success');
+        
+        // Refresh header untuk update nama
+        updateHeaderUserInfo();
+        
+    } catch(e) {
+        console.error('Gagal menyimpan profil:', e);
+        hideLoading();
+        showToast('Gagal menyimpan ke database: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// FUNGSI BANTUAN: Update info user di header
+// ============================================================
+function updateHeaderUserInfo() {
+    if (!currentUser) return;
+    
+    const elName = document.getElementById('sidebarUserName');
+    const elLevel = document.getElementById('sidebarUserLevel');
+    const elInitial = document.getElementById('sidebarUserInitial');
+    const elMobileInitial = document.getElementById('mobileUserInitial');
+    
+    const namaBaru = currentUser.nama_lengkap || currentUser.nama || currentUser.username;
+    const inisialBaru = namaBaru.charAt(0).toUpperCase();
+    
+    if (elName) elName.textContent = namaBaru;
+    if (elInitial) elInitial.textContent = inisialBaru;
+    if (elMobileInitial) elMobileInitial.textContent = inisialBaru;
+    
+    if (elLevel && currentUser.level === 'admin') {
+        elLevel.textContent = namaSekolah;
+    }
 }
 
 // ============================================================
