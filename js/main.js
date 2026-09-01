@@ -1342,12 +1342,11 @@ async function loadMasterSiswa() {
                                 <th class="p-3">Tanggal Lahir</th>
                                 <th class="p-3">Kelas</th>
                                 <th class="p-3">Jurusan</th>
-                                <th class="p-3">Status Akun</th>
                                 <th class="p-3 w-24 text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="tableSiswa" class="text-body-md text-on-surface">
-                            <tr><td colspan="10" class="p-8 text-center text-on-surface-variant">Memuat data...</td></tr>
+                            <tr><td colspan="9" class="p-8 text-center text-on-surface-variant">Memuat data...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1360,8 +1359,8 @@ async function loadMasterSiswa() {
         
         <div id="modalSiswa" class="fixed inset-0 z-[9997] hidden">
             <div class="modal-overlay absolute inset-0" onclick="closeModalSiswa()"></div>
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container-lowest rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-                <div class="p-6 border-b flex items-center justify-between sticky top-0 z-10" 
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container-lowest rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] flex flex-col">
+                <div class="p-6 border-b flex items-center justify-between shrink-0 rounded-t-xl" 
                      style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
                     <h3 class="font-headline-sm font-bold flex items-center gap-2" style="color: white;">
                         <span class="material-symbols-outlined" style="color: white;">person_add</span>
@@ -1371,7 +1370,8 @@ async function loadMasterSiswa() {
                         <span class="material-symbols-outlined" style="color: white;">close</span>
                     </button>
                 </div>
-                <form id="formSiswa" onsubmit="event.preventDefault(); simpanDataSiswa();" class="p-6 space-y-4">
+                <div class="overflow-y-auto p-6">
+                    <form id="formSiswa" onsubmit="event.preventDefault(); simpanDataSiswa();" class="space-y-4">
                     <input type="hidden" id="siswaId">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div><label class="block mb-2 font-label-md">Nama Lengkap *</label>
@@ -1412,6 +1412,7 @@ async function loadMasterSiswa() {
                         <button type="submit" class="px-5 py-2 rounded-lg bg-primary text-on-primary hover:opacity-90 shadow-sm">Simpan</button>
                     </div>
                 </form>
+                </div>
             </div>
         </div>
     `;
@@ -1470,7 +1471,6 @@ function renderSiswaTable(data) {
             <td class="p-3">${s.tanggal_lahir ? formatTanggalIndo(s.tanggal_lahir) : '-'}</td>
             <td class="p-3">${s.kelas}</td>
             <td class="p-3">${s.jurusan}</td>
-            <td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${statusWarna}">${s.status_akun}</span></td>
             <td class="p-3 text-center">
                 <button onclick="editSiswa(${s.id})" class="p-1.5 text-primary hover:bg-primary/10 rounded"><span class="material-symbols-outlined text-[18px]">edit</span></button>
                 <button onclick="hapusSiswa(${s.id})" class="p-1.5 text-error hover:bg-error/10 rounded"><span class="material-symbols-outlined text-[18px]">delete</span></button>
@@ -1907,7 +1907,7 @@ async function loadMasterJadwal() {
         <div id="modalJadwal" class="fixed inset-0 z-[9997] hidden">
             <div class="modal-overlay absolute inset-0" onclick="closeModalJadwal()"></div>
             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container-lowest rounded-xl shadow-xl max-w-xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-                <div class="p-6 border-b flex items-center justify-between sticky top-0 z-10" 
+                <div class="p-6 border-b flex items-center justify-between shrink-0 rounded-t-xl" 
                      style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
                     <h3 class="font-headline-sm font-bold flex items-center gap-2" style="color: white;">
                         <span class="material-symbols-outlined" style="color: white;">calendar_month</span>
@@ -4765,12 +4765,7 @@ async function loadMasterGuru() {
                         class="w-full pl-10 pr-4 py-2 bg-surface border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container">
                 </div>
                 <div class="flex gap-2 w-full md:w-auto flex-wrap justify-center md:justify-start">
-                    <select id="filterJKGuru" onchange="filterGuru()" class="w-full md:w-40 px-4 py-2 bg-surface border border-outline-variant rounded-lg">
-                        <option value="">Semua JK</option>
-                        <option value="Laki-laki">Laki-laki</option>
-                        <option value="Perempuan">Perempuan</option>
-                    </select>
-                    <select id="filterJabatanGuru" onchange="filterGuru()" class="w-full md:w-48 px-4 py-2 bg-surface border border-outline-variant rounded-lg">
+<select id="filterJabatanGuru" onchange="filterGuru()" class="w-full md:w-48 px-4 py-2 bg-surface border border-outline-variant rounded-lg">
                         <option value="">Semua Jabatan</option>
                         <option value="Guru Mata Pelajaran">Guru Mata Pelajaran</option>
                         <option value="Wali Kelas">Wali Kelas</option>
@@ -4813,8 +4808,8 @@ async function loadMasterGuru() {
         <!-- MODAL TAMBAH/EDIT GURU - FORM LENGKAP -->
         <div id="modalGuru" class="fixed inset-0 z-[9997] hidden">
             <div class="modal-overlay absolute inset-0" onclick="closeModalGuru()"></div>
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container-lowest rounded-xl shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-                <div class="p-6 border-b flex items-center justify-between sticky top-0 z-10" 
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container-lowest rounded-xl shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] flex flex-col">
+                <div class="p-6 border-b flex items-center justify-between shrink-0 rounded-t-xl" 
                      style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
                     <h3 class="font-headline-sm font-bold flex items-center gap-2" style="color: white;">
                         <span class="material-symbols-outlined" style="color: white;">person_add</span>
@@ -4824,7 +4819,8 @@ async function loadMasterGuru() {
                         <span class="material-symbols-outlined" style="color: white;">close</span>
                     </button>
                 </div>
-                <form id="formGuru" onsubmit="event.preventDefault(); simpanDataGuru();" class="p-6 space-y-5">
+                <div class="overflow-y-auto p-6">
+                    <form id="formGuru" onsubmit="event.preventDefault(); simpanDataGuru();" class="space-y-5">
                     <input type="hidden" id="guruId">
                     <input type="hidden" id="guruUserId">
                     
@@ -4911,26 +4907,15 @@ async function loadMasterGuru() {
                                     <option value="Tetap Yayasan">Tetap Yayasan</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block mb-2 font-label-md">Status Aktif</label>
-                                <select id="guruStatus" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5">
-                                    <option value="Aktif">Aktif</option>
-                                    <option value="Tidak Aktif">Tidak Aktif</option>
-                                </select>
-                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="bg-primary/5 rounded-lg p-4 border border-primary/20">
-                        <p class="text-sm text-on-surface-variant mb-2 font-medium">🔐 Informasi Akun Login (dibuat otomatis)</p>
-                        <p class="text-xs text-on-surface-variant">Username = NIP atau NUPTK<br>Password = 123456</p>
                     </div>
                     
                     <div class="flex justify-end gap-3 pt-4 border-t">
                         <button type="button" onclick="closeModalGuru()" class="px-5 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest">Batal</button>
-                        <button type="submit" class="px-5 py-2 rounded-lg bg-primary text-on-primary hover:opacity-90 shadow-sm">Simpan & Buat Akun</button>
+                        <button type="submit" class="px-5 py-2 rounded-lg bg-primary text-on-primary hover:opacity-90 shadow-sm">Simpan</button>
                     </div>
                 </form>
+                </div>
             </div>
         </div>
     `;
@@ -4951,7 +4936,6 @@ async function loadAllGuru() {
 
 function filterGuru() {
     const search = (document.getElementById('searchGuru')?.value || '').toLowerCase();
-    const jk = document.getElementById('filterJKGuru')?.value || '';
     const jabatan = document.getElementById('filterJabatanGuru')?.value || '';
     const status = document.getElementById('filterStatusGuru')?.value || '';
     
@@ -4960,10 +4944,9 @@ function filterGuru() {
             (g.nama_lengkap || '').toLowerCase().includes(search) ||
             (g.nip || '').includes(search) ||
             (g.nuptk || '').includes(search);
-        const matchJK = !jk || g.jenis_kelamin === jk;
         const matchJabatan = !jabatan || g.jabatan === jabatan;
         const matchStatus = !status || g.status_aktif === status;
-        return matchSearch && matchJK && matchJabatan && matchStatus;
+        return matchSearch && matchJabatan && matchStatus;
     });
     
     guruPage = 1;
@@ -5068,7 +5051,7 @@ async function simpanDataGuru() {
             jabatan: document.getElementById('guruJabatan').value,
             mata_pelajaran: document.getElementById('guruMapel').value.trim() || null,
             status_kepegawaian: document.getElementById('guruStatusKepegawaian').value,
-            status_aktif: document.getElementById('guruStatus').value
+            status_aktif: 'Aktif'
         };
         
         if (!dataGuru.nama_lengkap) {
@@ -5077,42 +5060,31 @@ async function simpanDataGuru() {
             return;
         }
         
-        let username = dataGuru.nip || dataGuru.nuptk;
-        let password = '123456';
+        // ===== LOGIKA BARU SESUAI PERMINTAAN =====
+        // Data Guru HANYA menyimpan data master ke tabel 'profil_guru'
+        // Akun login dibuat TERSEPISAH di menu "Akun Pengguna"
+        // (pilih level = Guru, lalu pilih nama guru dari referensi)
         
         if (id) {
-            // UPDATE
+            // UPDATE data guru yang sudah ada
             const { error } = await sb.from('profil_guru').update(dataGuru).eq('id', id);
             if (error) throw error;
             hideLoading();
             closeModalGuru();
             showToast('Data guru berhasil diperbarui!', 'success');
         } else {
-            // INSERT + BUAT AKUN OTOMATIS
-            const { data: guruBaru, error } = await sb.from('profil_guru').insert(dataGuru).select().single();
-            if (error) throw error;
-            
-            if (username) {
-                const { data: userBaru, error: errUser } = await sb.from('users').insert({
-                    username: username,
-                    password: password,
-                    level: 'guru',
-                    status: 'Aktif',
-                    id_referensi: guruBaru.id
-                }).select().single();
-                
-                if (!errUser && userBaru) {
-                    await sb.from('profil_guru').update({ user_id: userBaru.id }).eq('id', guruBaru.id);
-                    showToast('✅ Akun dibuat! Username: ' + username + ' | Password: ' + password, 'success');
-                } else {
-                    showToast('Guru tersimpan, tapi gagal buat akun login', 'warning');
+            // INSERT data guru BARU
+            const { error } = await sb.from('profil_guru').insert(dataGuru);
+            if (error) {
+                // Jika error karena user_id NOT NULL, berikan pesan jelas
+                if (error.message && error.message.includes('user_id') && error.message.includes('null')) {
+                    throw new Error('Kolom user_id di tabel profil_guru belum diubah.\nSilakan buka Supabase → tabel profil_guru → ubah kolom user_id dari NOT NULL menjadi NULLABLE (boleh kosong).');
                 }
-            } else {
-                showToast('Guru tersimpan. Isi NIP/NUPTK untuk membuat akun login', 'info');
+                throw error;
             }
-            
             hideLoading();
             closeModalGuru();
+            showToast('✅ Data guru berhasil disimpan!\nBuat akun loginnya di menu: Akun Pengguna → Tambah Akun → pilih level "Guru"', 'success');
         }
         
         await loadAllGuru();
@@ -5302,8 +5274,8 @@ async function loadAkunPengguna() {
         <!-- MODAL TAMBAH/EDIT AKUN -->
         <div id="modalAkun" class="fixed inset-0 z-[9997] hidden">
             <div class="modal-overlay absolute inset-0" onclick="closeModalAkun()"></div>
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container-lowest rounded-xl shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
-                <div class="p-6 border-b flex items-center justify-between sticky top-0 z-10" 
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container-lowest rounded-xl shadow-xl max-w-lg w-full mx-4 max-h-[90vh] flex flex-col">
+                <div class="p-6 border-b flex items-center justify-between shrink-0 rounded-t-xl" 
                      style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
                     <h3 class="font-headline-sm font-bold flex items-center gap-2" style="color: white;">
                         <span class="material-symbols-outlined" style="color: white;">person_add</span>
@@ -5313,7 +5285,8 @@ async function loadAkunPengguna() {
                         <span class="material-symbols-outlined" style="color: white;">close</span>
                     </button>
                 </div>
-                <form id="formAkun" onsubmit="event.preventDefault(); simpanAkun();" class="p-6 space-y-4">
+                <div class="overflow-y-auto p-6">
+                    <form id="formAkun" onsubmit="event.preventDefault(); simpanAkun();" class="space-y-4">
                     <input type="hidden" id="akunId">
                     
                     <div>
@@ -5382,6 +5355,7 @@ async function loadAkunPengguna() {
                         <button type="submit" class="px-5 py-2 rounded-lg bg-primary text-on-primary hover:opacity-90 shadow-sm">Simpan Akun</button>
                     </div>
                 </form>
+                </div>
             </div>
         </div>
         
@@ -5546,7 +5520,23 @@ function filterAkun() {
         const matchSearch = !search || 
             (u.username || '').toLowerCase().includes(search) ||
             (u.nama_pengguna || '').toLowerCase().includes(search);
-        const matchStatus = !status || u.status === status;
+        
+        // ===== PERUBAHAN LOGIKA FILTER STATUS =====
+        // - Jika filter kosong ("Semua Status"): tampilkan semua
+        // - Jika filter "Aktif": hanya yang status === 'Aktif'
+        // - Jika filter "Tidak Aktif": SEMUA yang BUKAN 'Aktif' 
+        //   (termasuk 'Belum Generate', 'Tidak Aktif', dll)
+        let matchStatus = true;
+        if (status) {
+            if (status === 'Aktif') {
+                matchStatus = u.status === 'Aktif';
+            } else {
+                // "Tidak Aktif" mencakup semua yang BUKAN aktif
+                matchStatus = u.status !== 'Aktif';
+            }
+        }
+        // ===== AKHIR PERUBAHAN =====
+        
         return matchTab && matchSearch && matchStatus;
     });
     
@@ -5567,11 +5557,18 @@ function renderAkunTable(data) {
     
     tbody.innerHTML = pageData.map((u, i) => {
         const levelWarna = {
-            'admin': 'bg-red-100 text-red-700',
-            'guru': 'bg-blue-100 text-blue-700',
-            'siswa': 'bg-green-100 text-green-700'
+            'admin': 'bg-blue-100 text-blue-700',
+            'guru': 'bg-purple-100 text-purple-700',
+            'siswa': 'bg-orange-100 text-orange-700'
         };
-        const statusWarna = u.status === 'Aktif' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600';
+        // ===== PERUBAHAN TAMPILAN STATUS =====
+        // Jika status = 'Aktif'  → tampilkan "Aktif" (hijau)
+        // Selain itu (termasuk 'Belum Generate', 'Tidak Aktif', dll)
+        //                  → tampilkan "Tidak Aktif" (abu-abu)
+        const isAktif = u.status === 'Aktif';
+        const statusTampil = isAktif ? 'Aktif' : 'Tidak Aktif';
+        const statusWarna = isAktif ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+        // ===== AKHIR PERUBAHAN =====
         const levelLabel = { 'admin': 'Admin', 'guru': 'Guru', 'siswa': 'Siswa' };
         
         return `
@@ -5580,7 +5577,7 @@ function renderAkunTable(data) {
             <td class="p-3 font-mono text-sm">${u.username || '-'}</td>
             <td class="p-3 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${levelWarna[u.level] || 'bg-gray-100'}">${levelLabel[u.level] || u.level}</span></td>
             <td class="p-3">${u.nama_pengguna || '-'}</td>
-            <td class="p-3 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${statusWarna}">${u.status || '-'}</span></td>
+            <td class="p-3 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${statusWarna}">${statusTampil}</span></td>
             <td class="p-3 text-center">
                 <button onclick="editAkun('${u.id}')" class="p-1.5 text-primary hover:bg-primary/10 rounded" title="Edit">
                     <span class="material-symbols-outlined text-[18px]">edit</span>
