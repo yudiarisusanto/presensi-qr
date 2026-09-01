@@ -337,6 +337,15 @@
                         </a>
                     </li>
                     
+                    <!-- Akun Pengguna -->
+                    <li>
+                        <a class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer" 
+                        data-page="akunPengguna" data-tooltip="Akun Pengguna" onclick="loadPage('akunPengguna')">
+                            <span class="material-symbols-outlined">manage_accounts</span>
+                            <span class="font-label-md text-label-md sidebar-text">Akun Pengguna</span>
+                        </a>
+                    </li>
+
                     <!-- Data Master Dropdown -->
                     <li class="group/dropdown">
                         <button class="group-dropdown-btn w-full flex items-center justify-between px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all" onclick="toggleDropdown(this)">
@@ -354,6 +363,15 @@
                                     <span class="font-label-md text-label-md sidebar-text">Data Siswa</span>
                                 </a>
                             </li>
+                            <!-- === DATA GURU - DITAMBAHKAN === -->
+                            <li>
+                                <a class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer" 
+                                   data-page="masterGuru" data-tooltip="Data Guru" onclick="loadPage('masterGuru')">
+                                    <span class="material-symbols-outlined text-[20px]">group</span>
+                                    <span class="font-label-md text-label-md sidebar-text">Data Guru</span>
+                                </a>
+                            </li>
+                            <!-- === AKHIR DATA GURU === -->
                             <li>
                                 <a class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer" 
                                    data-page="masterMapel" data-tooltip="Mata Pelajaran" onclick="loadPage('masterMapel')">

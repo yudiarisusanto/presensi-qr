@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Guru - PresensiQR</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400;500;600&display=swap">
+</head>
+<body>
+    <div class="flex h-screen overflow-hidden">
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="w-64 bg-surface-container-lowest border-r border-outline-variant flex flex-col fixed h-full z-30 transition-all">
+            <div class="p-4 border-b border-outline-variant">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                        <span class="material-symbols-outlined text-on-primary">school</span>
+                    </div>
+                    <div>
+                        <h1 class="font-headline-sm text-on-surface">PresensiQR</h1>
+                        <p class="text-xs text-on-surface-variant">Sistem Presensi</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Pengguna -->
+            <div class="p-4 border-b border-outline-variant">
+                <div class="flex items-center gap-3">
+                    <div id="sidebarFotoProfil" class="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold text-lg"></div>
+                    <div class="flex-1 min-w-0">
+                        <p id="sidebarNama" class="font-label-md text-on-surface font-semibold truncate">Guru</p>
+                        <p id="sidebarLevel" class="text-xs text-on-surface-variant">Guru Mata Pelajaran</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NAVIGASI -->
+            <nav class="flex-1 overflow-y-auto p-2">
+                <div class="space-y-1">
+                    <div class="nav-item active" data-page="dashboardGuru" onclick="loadPage('dashboardGuru')">
+                        <span class="material-symbols-outlined">dashboard</span>
+                        <span>Dashboard</span>
+                    </div>
+                    <div class="nav-item" data-page="jadwalSaya" onclick="loadPage('jadwalSaya')">
+                        <span class="material-symbols-outlined">calendar_month</span>
+                        <span>Jadwal Mengajar</span>
+                    </div>
+                    <div class="nav-item" data-page="rekapAbsenSaya" onclick="loadPage('rekapAbsenSaya')">
+                        <span class="material-symbols-outlined">fact_check</span>
+                        <span>Rekap Kehadiran</span>
+                    </div>
+                    <div class="nav-item" data-page="profilPengguna" onclick="loadPage('profilPengguna')">
+                        <span class="material-symbols-outlined">person</span>
+                        <span>Profil Pengguna</span>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- LOGOUT -->
+            <div class="p-4 border-t border-outline-variant">
+                <button onclick="doLogout()" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-error hover:bg-error-container/10 transition-colors">
+                    <span class="material-symbols-outlined">logout</span>
+                    <span>Keluar</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- KONTEN UTAMA -->
+        <main class="flex-1 ml-64 overflow-y-auto bg-surface-bright">
+            <!-- Top Bar -->
+            <header class="bg-surface-container-lowest border-b border-outline-variant px-6 py-3 flex items-center justify-between sticky top-0 z-20">
+                <button onclick="toggleMobileSidebar()" class="md:hidden p-2 rounded-lg hover:bg-surface-container">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+                <h2 id="pageTitle" class="font-headline-sm text-on-surface">Dashboard Guru</h2>
+                <div class="flex items-center gap-4">
+                    <span id="tanggalSekarang" class="text-sm text-on-surface-variant"></span>
+                </div>
+            </header>
+
+            <!-- AREA KONTEN -->
+            <div id="content-area" class="p-6">
+                <!-- Konten dimuat lewat JavaScript -->
+            </div>
+        </main>
+    </div>
+
+    <!-- TOAST & LOADING -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-[9999] space-y-2"></div>
+    <div id="loadingOverlay" class="fixed inset-0 z-[9998] bg-black/50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl p-6 flex flex-col items-center gap-3">
+            <div class="loading-spinner"></div>
+            <p id="loadingText" class="text-on-surface">Memuat...</p>
+        </div>
+    </div>
+
+    <!-- MODAL KONFIRMASI -->
+    <div id="modalConfirm" class="fixed inset-0 z-[9997] hidden">
+        <div class="modal-overlay absolute inset-0 bg-black/50"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 id="modalConfirmTitle" class="font-headline-sm text-on-surface mb-4"></h3>
+            <p id="modalConfirmMessage" class="text-on-surface-variant mb-6"></p>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModalConfirm()" class="px-4 py-2 rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-container">Batal</button>
+                <button onclick="executeModalConfirm()" class="px-4 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary/90">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/main-guru.js"></script>
+    <script>
+        // Inisialisasi saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cek sesi: Hanya Guru yang boleh di sini
+            const user = checkSession('guru');
+            if (!user) return;
+
+            // Tampilkan nama & foto di sidebar
+            document.getElementById('sidebarNama').textContent = user.nama_lengkap || user.nama || 'Guru';
+            document.getElementById('sidebarLevel').textContent = user.jabatan || 'Guru Mata Pelajaran';
+            document.getElementById('tanggalSekarang').textContent = formatTanggalIndo(formatTanggal(new Date()));
+
+            // Tampilkan inisial atau foto
+            const fotoEl = document.getElementById('sidebarFotoProfil');
+            if (user.foto_profil) {
+                fotoEl.innerHTML = `<img src="${user.foto_profil}" class="w-full h-full rounded-full object-cover">`;
+            } else {
+                const inisial = (user.nama_lengkap || user.nama || 'Guru')[0].toUpperCase();
+                fotoEl.innerHTML = `<span class="font-bold text-lg">${inisial}</span>`;
+            }
+
+            // Muat halaman awal
+            loadPage('dashboardGuru');
+        });
+    </script>
+</body>
+</html>

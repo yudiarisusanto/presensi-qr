@@ -1,10 +1,8 @@
 // ============================================================
-// js/auth.js
+// js/auth.js - VERSI DUKUNGAN LEVEL GURU
 // Logika autentikasi login, logout, dan session
 // ============================================================
-
 let currentUser = null;
-
 // ============================================================
 // LOGIN
 // ============================================================
@@ -55,7 +53,9 @@ async function doLogin() {
             status: userData.status
         };
         
-        // Jika siswa, ambil data lengkapnya
+        // === AMBIL DATA PROFIL SESUAI LEVEL ===
+        
+        // Level SISWA
         if (userData.level === 'siswa' && userData.id_referensi) {
             const { data: siswa } = await sb
                 .from('siswa')
@@ -65,36 +65,60 @@ async function doLogin() {
             
             if (siswa) {
                 currentUser.nama = siswa.nama_lengkap;
+                currentUser.nama_lengkap = siswa.nama_lengkap;
                 currentUser.kelas = siswa.kelas;
                 currentUser.jurusan = siswa.jurusan;
                 currentUser.nisn = siswa.nisn;
                 currentUser.siswa_id = siswa.id;
             }
-        } else if (userData.level === 'admin') {
-            // Untuk admin: coba ambil data dari profil_admin jika tersedia
-            currentUser.nama = 'Administrator';
-            currentUser.nama_lengkap = 'Administrator';
-            try {
-                const { data: profilAdmin } = await sb
-                    .from('profil_admin')
-                    .select('nama_lengkap, jabatan, foto_profil')
-                    .eq('user_id', userData.id)
-                    .maybeSingle();
-                
-                if (profilAdmin && profilAdmin.nama_lengkap) {
-                    currentUser.nama = profilAdmin.nama_lengkap;
-                    currentUser.nama_lengkap = profilAdmin.nama_lengkap;
-                    if (profilAdmin.jabatan) currentUser.jabatan = profilAdmin.jabatan;
-                    if (profilAdmin.foto_profil) {
-                        localStorage.setItem('presensiQR_fotoProfil', profilAdmin.foto_profil);
-                    }
+        }
+        // Level GURU
+        else if (userData.level === 'guru') {
+            const { data: profilGuru } = await sb
+                .from('profil_guru')
+                .select('*')
+                .eq('user_id', userData.id)
+                .maybeSingle();
+            
+            if (profilGuru) {
+                currentUser.nama = profilGuru.nama_lengkap;
+                currentUser.nama_lengkap = profilGuru.nama_lengkap;
+                currentUser.guru_id = profilGuru.id;
+                currentUser.nip = profilGuru.nip;
+                currentUser.nuptk = profilGuru.nuptk;
+                currentUser.jabatan = profilGuru.jabatan;
+                currentUser.mata_pelajaran = profilGuru.mata_pelajaran;
+                currentUser.foto_profil = profilGuru.foto_profil;
+                // Simpan foto ke localStorage agar sidebar bisa tampil
+                if (profilGuru.foto_profil) {
+                    localStorage.setItem('presensiQR_fotoProfil', profilGuru.foto_profil);
                 }
-            } catch (e) {
-                console.warn('Gagal memuat profil admin saat login:', e.message);
+            } else {
+                currentUser.nama = 'Guru';
             }
-        } else {
-            currentUser.nama = 'Pengguna';
-            currentUser.nama_lengkap = 'Pengguna';
+        }
+        // Level ADMIN
+        else if (userData.level === 'admin') {
+            const { data: profilAdmin } = await sb
+                .from('profil_admin')
+                .select('*')
+                .eq('user_id', userData.id)
+                .maybeSingle();
+            
+            if (profilAdmin) {
+                currentUser.nama = profilAdmin.nama_lengkap || 'Administrator';
+                currentUser.nama_lengkap = profilAdmin.nama_lengkap;
+                currentUser.admin_id = profilAdmin.id;
+                currentUser.nip = profilAdmin.nip;
+                currentUser.nuptk = profilAdmin.nuptk;
+                currentUser.jabatan = profilAdmin.jabatan;
+                currentUser.foto_profil = profilAdmin.foto_profil;
+                if (profilAdmin.foto_profil) {
+                    localStorage.setItem('presensiQR_fotoProfil', profilAdmin.foto_profil);
+                }
+            } else {
+                currentUser.nama = 'Administrator';
+            }
         }
         
         // Simpan ke localStorage
@@ -109,6 +133,8 @@ async function doLogin() {
         setTimeout(() => {
             if (currentUser.level === 'admin') {
                 window.location.href = 'dashboard-admin.html';
+            } else if (currentUser.level === 'guru') {
+                window.location.href = 'dashboard-guru.html';
             } else {
                 window.location.href = 'dashboard-siswa.html';
             }
@@ -120,7 +146,6 @@ async function doLogin() {
         showToast('Error: ' + error.message, 'error');
     }
 }
-
 // ============================================================
 // CEK SESSION (dipanggil di setiap halaman dashboard)
 // ============================================================
@@ -136,8 +161,14 @@ function checkSession(requiredLevel = null) {
         currentUser = JSON.parse(stored);
         
         if (requiredLevel && currentUser.level !== requiredLevel) {
-            window.location.href = currentUser.level === 'admin' ? 
-                'dashboard-admin.html' : 'dashboard-siswa.html';
+            // Alihkan ke dashboard yang sesuai levelnya
+            if (currentUser.level === 'admin') {
+                window.location.href = 'dashboard-admin.html';
+            } else if (currentUser.level === 'guru') {
+                window.location.href = 'dashboard-guru.html';
+            } else {
+                window.location.href = 'dashboard-siswa.html';
+            }
             return null;
         }
         
@@ -148,7 +179,6 @@ function checkSession(requiredLevel = null) {
         return null;
     }
 }
-
 // ============================================================
 // LOGOUT
 // ============================================================
@@ -156,11 +186,11 @@ function doLogout() {
     showModalConfirm('Konfirmasi', 'Apakah Anda yakin ingin keluar?', function() {
         if (currentUser) catatLog(currentUser.username, 'Logout', 'User keluar');
         localStorage.removeItem('presensiQR_user');
+        localStorage.removeItem('presensiQR_fotoProfil');
         currentUser = null;
         window.location.href = 'index.html';
     });
 }
-
 // ============================================================
 // CATAT LOG AKTIVITAS
 // ============================================================
@@ -173,7 +203,6 @@ async function catatLog(pengguna, aktivitas, keterangan = '') {
         console.warn('Gagal catat log:', e.message);
     }
 }
-
 // ============================================================
 // UBAH PASSWORD
 // ============================================================

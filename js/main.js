@@ -11,6 +11,40 @@
 // UI UTILITIES: Loading, Toast, Modal
 // ============================================================
 
+
+// ============================================================
+// CSS untuk Custom Dropdown (search di dalam popup)
+// ============================================================
+(function injectCustomDropdownCSS() {
+    if (document.getElementById('custom-dropdown-css')) return;
+    const css = `
+        <style id="custom-dropdown-css">
+            .custom-dropdown .dropdown-menu { display: none; }
+            .custom-dropdown.open .dropdown-menu { display: block; }
+            .custom-dropdown .dropdown-option {
+                padding: 8px 12px;
+                cursor: pointer;
+                font-size: 14px;
+                color: #191c1d;
+                border-bottom: 1px solid #eceeee;
+            }
+            .custom-dropdown .dropdown-option:last-child { border-bottom: none; }
+            .custom-dropdown .dropdown-option:hover { background-color: #e6e8e8; }
+            .custom-dropdown .dropdown-empty {
+                padding: 16px;
+                text-align: center;
+                color: #6f797a;
+                font-size: 13px;
+            }
+            .dark .custom-dropdown .dropdown-option { color: #eff1f1; border-bottom-color: #393c3d; }
+            .dark .custom-dropdown .dropdown-option:hover { background-color: #393c3d; }
+            .dark .custom-dropdown .dropdown-menu { background-color: #2e3131; border-color: rgba(111,121,122,0.5); }
+            .dark .custom-dropdown .dropdown-toggle { background-color: #272a2b; border-color: rgba(111,121,122,0.5); color: #eff1f1; }
+        </style>
+    `;
+    document.head.insertAdjacentHTML('beforeend', css);
+})();
+
 function showLoading(text = 'Memuat...') {
     const el = document.getElementById('loadingOverlay');
     const txt = document.getElementById('loadingText');
@@ -872,6 +906,7 @@ function loadPage(pageName) {
     switch(pageName) {
         case 'dashboardAdmin': loadDashboardAdmin(); break;
         case 'masterSiswa': loadMasterSiswa(); break;
+            case 'masterGuru': loadMasterGuru(); break;
         case 'masterMapel': loadMasterMapel(); break;
         case 'masterJadwal': loadMasterJadwal(); break;
         case 'qrGenerator': loadQRGenerator(); break;
@@ -880,6 +915,7 @@ function loadPage(pageName) {
         case 'pusatUnduhan': loadPusatUnduhan(); break;
         case 'profilPengguna': loadProfilPengguna(); break;
         case 'profilSekolah': loadProfilSekolah(); break;
+        case 'akunPengguna': loadAkunPengguna(); break;
         case 'pengaturan': loadPengaturan(); break;
         default: loadDashboardAdmin();
     }
@@ -3097,46 +3133,17 @@ async function loadInfoJadwalSekarang() {
 }
 
 // ============================================================
-// PROFIL PENGGUNA (VERSI DATABASE - profil_admin)
+// PROFIL PENGGUNA
 // ============================================================
-async function loadProfilPengguna() {
+function loadProfilPengguna() {
     const contentArea = document.getElementById('content-area');
     
     // Ambil data user dari session
     const userData = currentUser || {};
+    const namaUser = userData.nama_lengkap || userData.username || 'Admin Guru';
     const username = userData.username || 'admin';
     const level = userData.level || 'Administrator';
-    
-    // Ambil data profil dari database
-    let profilDB = {};
-    try {
-        const sb = getSupabase();
-        if (sb && currentUser && currentUser.id) {
-            const { data } = await sb
-                .from('profil_admin')
-                .select('*')
-                .eq('user_id', currentUser.id)
-                .maybeSingle();
-            
-            if (data) {
-                profilDB = data;
-            }
-        }
-    } catch (e) {
-        console.error('Gagal memuat profil admin dari database:', e);
-        // Fallback: coba dari localStorage jika database gagal
-        const stored = localStorage.getItem('presensiQR_profilAdmin');
-        if (stored) {
-            try { profilDB = JSON.parse(stored); } catch(e) {}
-        }
-    }
-    
-    // Nama user: prioritas dari database, lalu currentUser, lalu default
-    const namaUser = profilDB.nama_lengkap || userData.nama_lengkap || userData.nama || userData.username || 'Admin Guru';
     const inisial = namaUser.charAt(0).toUpperCase();
-    
-    // Cek foto profil: dari database, lalu localStorage, lalu default
-    let fotoProfil = profilDB.foto_profil || localStorage.getItem('presensiQR_fotoProfil') || '';
     
     contentArea.innerHTML = `
         <div>
@@ -3145,23 +3152,17 @@ async function loadProfilPengguna() {
                 <p class="font-body-md text-body-md text-on-surface-variant">Kelola informasi profil dan kredensial akun administrator Anda.</p>
             </div>
 
-            <!-- Grid Layout -->
+            <!-- Grid Layout - Card kiri dibuat lebih lebar (5/12) -->
             <div class="grid grid-cols-1 md:grid-cols-12 gap-stack-md">
 
-                <!-- Profile Picture Card (Left Col - 5/12) -->
+                <!-- Profile Picture Card (Left Col - Lebih lebar 5/12) -->
                 <div class="md:col-span-5 bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant flex flex-col text-center">
                     <div class="bg-primary-container rounded-t-xl p-6 flex flex-col items-center text-center">
                         <div class="relative mb-4 group">
-                            ${fotoProfil ? `
-                                <img src="${fotoProfil}" alt="Foto Profil" 
-                                    class="w-32 h-32 rounded-full object-cover border-4 border-surface shadow-md">
-                            ` : `
-                                <div class="w-32 h-32 rounded-full bg-primary flex items-center justify-center border-4 border-surface shadow-md">
-                                    <span class="text-on-primary font-bold text-headline-lg">${inisial}</span>
-                                </div>
-                            `}
-                            <button onclick="document.getElementById('fotoProfilInput').click()" 
-                                class="absolute bottom-0 right-0 bg-surface-container-high text-primary w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:bg-surface-container-highest transition-colors">
+                            <div class="w-32 h-32 rounded-full bg-primary flex items-center justify-center border-4 border-surface shadow-md">
+                                <span class="text-on-primary font-bold text-headline-lg">${inisial}</span>
+                            </div>
+                            <button onclick="document.getElementById('fotoProfilInput').click()" class="absolute bottom-0 right-0 bg-surface-container-high text-primary w-8 h-8 rounded-full flex items-center justify-center shadow-md hover:bg-surface-container-highest transition-colors">
                                 <span class="material-symbols-outlined text-sm">photo_camera</span>
                             </button>
                             <input type="file" id="fotoProfilInput" accept="image/*" class="hidden" onchange="handleFotoProfilUpload(event)">
@@ -3192,13 +3193,11 @@ async function loadProfilPengguna() {
                             </div>
                         </div>
                         <div class="w-full border-t border-outline-variant pt-stack-md">
-                            <button onclick="document.getElementById('fotoProfilInput').click()" 
-                                class="w-full font-label-md py-2 px-4 rounded-lg transition-colors border border-primary flex items-center justify-center gap-2 text-primary hover:bg-primary/5">
+                            <button onclick="document.getElementById('fotoProfilInput').click()" class="w-full font-label-md py-2 px-4 rounded-lg transition-colors border border-primary flex items-center justify-center gap-2 text-primary hover:bg-primary/5">
                                 <span class="material-symbols-outlined text-sm">upload</span>
                                 Unggah Foto Baru
                             </button>
-                            <button onclick="loadPage('pengaturan')" 
-                                class="w-full mt-3 bg-surface-container-lowest hover:bg-surface-container text-primary font-label-md py-2 px-4 rounded-lg transition-colors border flex items-center justify-center gap-2 border-primary">
+                            <button onclick="loadPage('pengaturan')" class="w-full mt-3 bg-surface-container-lowest hover:bg-surface-container text-primary font-label-md py-2 px-4 rounded-lg transition-colors border flex items-center justify-center gap-2 border-primary">
                                 <span class="material-symbols-outlined text-sm">manage_accounts</span>
                                 Kelola Akun Admin
                             </button>
@@ -3217,53 +3216,34 @@ async function loadProfilPengguna() {
                             <!-- Full Name -->
                             <div>
                                 <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="fullName">Nama Lengkap</label>
-                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" 
-                                    id="fullName" type="text" value="${profilDB.nama_lengkap || namaUser}">
+                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" id="fullName" type="text" value="${namaUser}">
                             </div>
                             <!-- NIP -->
                             <div>
                                 <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="nip">NIP / ID Pegawai</label>
-                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all font-mono" 
-                                    id="nip" type="text" value="${profilDB.nip || ''}">
-                            </div>
-                            <!-- NUPTK -->
-                            <div>
-                                <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="nuptk">NUPTK</label>
-                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all font-mono" 
-                                    id="nuptk" type="text" value="${profilDB.nuptk || ''}" placeholder="Nomor Unik Pendidik dan Tenaga Kependidikan">
-                            </div>
-                            <!-- Jabatan -->
-                            <div>
-                                <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="jabatan">Jabatan</label>
-                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" 
-                                    id="jabatan" type="text" value="${profilDB.jabatan || 'Administrator'}">
+                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" id="nip" type="text" value="198001012005011003">
                             </div>
                             <!-- Email -->
                             <div class="md:col-span-2">
                                 <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="email">Alamat Email</label>
-                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" 
-                                    id="email" type="email" value="${profilDB.email || ''}">
+                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" id="email" type="email" value="admin.guru@smkn1.sch.id">
                             </div>
                             <!-- Phone -->
                             <div class="md:col-span-2">
                                 <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="phone">Nomor Telepon</label>
-                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" 
-                                    id="phone" type="tel" value="${profilDB.telepon || ''}">
+                                <input class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all" id="phone" type="tel" value="+62 812 3456 7890">
                             </div>
                             <!-- Address -->
                             <div class="md:col-span-2">
                                 <label class="block font-label-md text-label-md text-on-surface-variant mb-1" for="address">Alamat Lengkap</label>
-                                <textarea class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all resize-none" 
-                                    id="address" rows="3">${profilDB.alamat || ''}</textarea>
+                                <textarea class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2 text-on-surface font-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all resize-none" id="address" rows="3">Jl. Pendidikan No. 123, Kota Pelajar, Provinsi Ilmu Pengetahuan</textarea>
                             </div>
                         </div>
                         <div class="flex justify-end gap-3 mt-stack-lg pt-stack-md border-t border-outline-variant">
-                            <button class="px-6 py-2 rounded-lg font-label-md text-primary border border-transparent hover:bg-surface-container transition-colors" 
-                                type="button" onclick="loadProfilPengguna()">
+                            <button class="px-6 py-2 rounded-lg font-label-md text-primary border border-transparent hover:bg-surface-container transition-colors" type="button" onclick="loadProfilPengguna()">
                                 Batal
                             </button>
-                            <button class="px-6 py-2 rounded-lg font-label-md bg-primary text-on-primary hover:bg-primary-container transition-colors shadow-sm" 
-                                type="submit" id="btnSimpanProfil">
+                            <button class="px-6 py-2 rounded-lg font-label-md bg-primary text-on-primary hover:bg-primary-container transition-colors shadow-sm" type="submit">
                                 Simpan Perubahan
                             </button>
                         </div>
@@ -3276,9 +3256,9 @@ async function loadProfilPengguna() {
 }
 
 // ============================================================
-// FUNGSI: Handle Upload Foto Profil (SIMPAN KE DATABASE)
+// FUNGSI: Handle Upload Foto Profil
 // ============================================================
-async function handleFotoProfilUpload(event) {
+function handleFotoProfilUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
     
@@ -3287,169 +3267,47 @@ async function handleFotoProfilUpload(event) {
         return;
     }
     
-    showLoading('Mengunggah foto...');
-    
     const reader = new FileReader();
-    reader.onload = async function(e) {
-        const fotoBase64 = e.target.result;
-        
+    reader.onload = function(e) {
         try {
-            const sb = getSupabase();
-            if (sb && currentUser && currentUser.id) {
-                // Cek apakah profil sudah ada di database
-                const { data: existing } = await sb
-                    .from('profil_admin')
-                    .select('id')
-                    .eq('user_id', currentUser.id)
-                    .maybeSingle();
-                
-                if (existing) {
-                    // Update foto profil di database
-                    await sb
-                        .from('profil_admin')
-                        .update({ 
-                            foto_profil: fotoBase64,
-                            updated_at: new Date().toISOString()
-                        })
-                        .eq('id', existing.id);
-                } else {
-                    // Insert profil baru (jika belum ada)
-                    await sb
-                        .from('profil_admin')
-                        .insert({
-                            user_id: currentUser.id,
-                            nama_lengkap: currentUser.nama_lengkap || currentUser.nama || currentUser.username || 'Admin',
-                            foto_profil: fotoBase64
-                        });
-                }
-            }
-            
-            // Simpan juga di localStorage sebagai cache
-            localStorage.setItem('presensiQR_fotoProfil', fotoBase64);
-            
-            hideLoading();
+            localStorage.setItem('presensiQR_fotoProfil', e.target.result);
             showToast('Foto profil berhasil diunggah!', 'success');
             loadProfilPengguna(); // Reload untuk menampilkan foto baru
-            
         } catch(err) {
-            console.error('Gagal menyimpan foto ke database:', err);
-            hideLoading();
-            showToast('Gagal menyimpan foto ke database!', 'error');
+            showToast('Gagal menyimpan foto!', 'error');
         }
     };
     reader.readAsDataURL(file);
 }
 
 // ============================================================
-// FUNGSI: Simpan Profil Pengguna (KE DATABASE)
+// FUNGSI: Simpan Profil Pengguna
 // ============================================================
-async function simpanProfilPengguna() {
-    showLoading('Menyimpan ke database...');
-    
-    const profil = {
-        nama_lengkap: document.getElementById('fullName').value.trim(),
-        nip: document.getElementById('nip').value.trim(),
-        nuptk: document.getElementById('nuptk').value.trim(),
-        jabatan: document.getElementById('jabatan').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        telepon: document.getElementById('phone').value.trim(),
-        alamat: document.getElementById('address').value.trim()
-    };
-    
-    // Validasi sederhana
-    if (!profil.nama_lengkap) {
-        hideLoading();
-        showToast('Nama lengkap tidak boleh kosong!', 'error');
-        return;
-    }
-    
-    try {
-        const sb = getSupabase();
-        if (!sb || !currentUser || !currentUser.id) {
-            throw new Error('Supabase atau user tidak tersedia. Pastikan currentUser memiliki properti .id');
+function simpanProfilPengguna() {
+    showLoading('Menyimpan...');
+    setTimeout(() => {
+        // Simpan data sederhana (dalam implementasi nyata, simpan ke database)
+        const profil = {
+            nama_lengkap: document.getElementById('fullName').value,
+            nip: document.getElementById('nip').value,
+            email: document.getElementById('email').value,
+            telepon: document.getElementById('phone').value,
+            alamat: document.getElementById('address').value
+        };
+        
+        try {
+            localStorage.setItem('presensiQR_profilAdmin', JSON.stringify(profil));
+            // Update currentUser
+            if (currentUser) {
+                currentUser.nama_lengkap = profil.nama_lengkap;
+            }
+            hideLoading();
+            showToast('Profil berhasil disimpan!', 'success');
+        } catch(e) {
+            hideLoading();
+            showToast('Gagal menyimpan profil!', 'error');
         }
-        
-        // Cek apakah profil sudah ada
-        const { data: existing } = await sb
-            .from('profil_admin')
-            .select('id')
-            .eq('user_id', currentUser.id)
-            .maybeSingle();
-        
-        if (existing) {
-            // UPDATE data yang sudah ada
-            await sb
-                .from('profil_admin')
-                .update({
-                    nama_lengkap: profil.nama_lengkap,
-                    nip: profil.nip,
-                    nuptk: profil.nuptk,
-                    jabatan: profil.jabatan,
-                    email: profil.email,
-                    telepon: profil.telepon,
-                    alamat: profil.alamat,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', existing.id);
-        } else {
-            // INSERT data baru
-            await sb
-                .from('profil_admin')
-                .insert({
-                    user_id: currentUser.id,
-                    nama_lengkap: profil.nama_lengkap,
-                    nip: profil.nip,
-                    nuptk: profil.nuptk,
-                    jabatan: profil.jabatan,
-                    email: profil.email,
-                    telepon: profil.telepon,
-                    alamat: profil.alamat
-                });
-        }
-        
-        // Update currentUser agar nama di header berubah
-        if (currentUser) {
-            currentUser.nama_lengkap = profil.nama_lengkap;
-            currentUser.nama = profil.nama_lengkap; // untuk kompatibilitas
-        }
-        
-        // Simpan juga di localStorage sebagai cache/fallback
-        localStorage.setItem('presensiQR_profilAdmin', JSON.stringify(profil));
-        
-        hideLoading();
-        showToast('Profil berhasil disimpan ke database!', 'success');
-        
-        // Refresh header untuk update nama
-        updateHeaderUserInfo();
-        
-    } catch(e) {
-        console.error('Gagal menyimpan profil:', e);
-        hideLoading();
-        showToast('Gagal menyimpan ke database: ' + e.message, 'error');
-    }
-}
-
-// ============================================================
-// FUNGSI BANTUAN: Update info user di header
-// ============================================================
-function updateHeaderUserInfo() {
-    if (!currentUser) return;
-    
-    const elName = document.getElementById('sidebarUserName');
-    const elLevel = document.getElementById('sidebarUserLevel');
-    const elInitial = document.getElementById('sidebarUserInitial');
-    const elMobileInitial = document.getElementById('mobileUserInitial');
-    
-    const namaBaru = currentUser.nama_lengkap || currentUser.nama || currentUser.username;
-    const inisialBaru = namaBaru.charAt(0).toUpperCase();
-    
-    if (elName) elName.textContent = namaBaru;
-    if (elInitial) elInitial.textContent = inisialBaru;
-    if (elMobileInitial) elMobileInitial.textContent = inisialBaru;
-    
-    if (elLevel && currentUser.level === 'admin') {
-        elLevel.textContent = namaSekolah;
-    }
+    }, 500);
 }
 
 // ============================================================
@@ -4876,4 +4734,1340 @@ async function aktifkanAkunSiswa(siswaId, nisn) {
 }
 // ============================================================
 // AKHIR FITUR UPLOAD EXCEL
+// ============================================================
+
+
+// ============================================================
+// ✅ FITUR DATA GURU (CRUD + Generate Akun Login)
+// ============================================================
+let allGuruData = [];
+let guruPage = 1;
+const guruPerPage = 10;
+
+async function loadMasterGuru() {
+    const contentArea = document.getElementById('content-area');
+    contentArea.innerHTML = `
+        <div>
+            <div class="mb-stack-lg flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div>
+                    <h1 class="text-headline-lg font-headline-lg text-on-surface mb-1">Data Guru</h1>
+                    <p class="text-body-md text-on-surface-variant">Kelola data lengkap guru, NIP, NUPTK, dan akun login.</p>
+                </div>
+                <button onclick="showModalGuru()" class="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm font-bold text-sm">
+                    <span class="material-symbols-outlined text-[18px]">add</span>Tambah Guru
+                </button>
+            </div>
+            
+            <div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-surface-container-highest mb-stack-md flex flex-col md:flex-row gap-4 items-center">
+                <div class="relative w-full md:w-96">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+                    <input type="text" id="searchGuru" placeholder="Cari nama, NIP, atau NUPTK..." oninput="filterGuru()"
+                        class="w-full pl-10 pr-4 py-2 bg-surface border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container">
+                </div>
+                <div class="flex gap-2 w-full md:w-auto flex-wrap justify-center md:justify-start">
+                    <select id="filterJKGuru" onchange="filterGuru()" class="w-full md:w-40 px-4 py-2 bg-surface border border-outline-variant rounded-lg">
+                        <option value="">Semua JK</option>
+                        <option value="Laki-laki">Laki-laki</option>
+                        <option value="Perempuan">Perempuan</option>
+                    </select>
+                    <select id="filterJabatanGuru" onchange="filterGuru()" class="w-full md:w-48 px-4 py-2 bg-surface border border-outline-variant rounded-lg">
+                        <option value="">Semua Jabatan</option>
+                        <option value="Guru Mata Pelajaran">Guru Mata Pelajaran</option>
+                        <option value="Wali Kelas">Wali Kelas</option>
+                        <option value="Kepala Sekolah">Kepala Sekolah</option>
+                    </select>
+                    <select id="filterStatusGuru" onchange="filterGuru()" class="w-full md:w-40 px-4 py-2 bg-surface border border-outline-variant rounded-lg">
+                        <option value="">Semua Status</option>
+                        <option value="Aktif">Aktif</option>
+                        <option value="Tidak Aktif">Tidak Aktif</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container-highest overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-label-md uppercase tracking-wider border-b" style="background: linear-gradient(to bottom right, #004349, #0d5c63); color: white; whitespace-nowrap">
+                                <th class="p-3 w-12 text-center">No</th>
+                                <th class="p-3">Nama Lengkap</th>
+                                <th class="p-3">NIP</th>
+                                <th class="p-3">NUPTK</th>
+                                <th class="p-3 w-20 text-center">JK</th>
+                                <th class="p-3">Jabatan</th>
+                                <th class="p-3 w-36 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableGuru" class="text-body-md text-on-surface">
+                            <tr><td colspan="7" class="p-8 text-center text-on-surface-variant">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="flex justify-between items-center p-4 bg-surface border-t">
+                    <span class="text-sm text-on-surface-variant" id="guruPaginationInfo">Menampilkan 0 data</span>
+                    <div class="flex gap-1" id="guruPaginationButtons"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- MODAL TAMBAH/EDIT GURU - FORM LENGKAP -->
+        <div id="modalGuru" class="fixed inset-0 z-[9997] hidden">
+            <div class="modal-overlay absolute inset-0" onclick="closeModalGuru()"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container-lowest rounded-xl shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="p-6 border-b flex items-center justify-between sticky top-0 z-10" 
+                     style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
+                    <h3 class="font-headline-sm font-bold flex items-center gap-2" style="color: white;">
+                        <span class="material-symbols-outlined" style="color: white;">person_add</span>
+                        <span id="modalGuruTitle">Tambah Guru Baru</span>
+                    </h3>
+                    <button onclick="closeModalGuru()" class="p-2 rounded-lg hover:bg-white/10 transition-colors">
+                        <span class="material-symbols-outlined" style="color: white;">close</span>
+                    </button>
+                </div>
+                <form id="formGuru" onsubmit="event.preventDefault(); simpanDataGuru();" class="p-6 space-y-5">
+                    <input type="hidden" id="guruId">
+                    <input type="hidden" id="guruUserId">
+                    
+                    <!-- IDENTITAS DASAR -->
+                    <div>
+                        <h4 class="font-label-md text-primary uppercase tracking-wide mb-3 pb-2 border-b border-outline-variant/30">Identitas Dasar</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block mb-2 font-label-md">Nama Lengkap *</label>
+                                <input type="text" id="guruNama" required class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-primary-container focus:border-primary">
+                            </div>
+                            <div>
+                                <label class="block mb-2 font-label-md">NIP</label>
+                                <input type="text" id="guruNip" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5 font-mono">
+                            </div>
+                            <div>
+                                <label class="block mb-2 font-label-md">NUPTK</label>
+                                <input type="text" id="guruNuptk" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5 font-mono">
+                            </div>
+                            <div>
+                                <label class="block mb-2 font-label-md">Jenis Kelamin</label>
+                                <select id="guruJK" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="Laki-laki">Laki-laki</option>
+                                    <option value="Perempuan">Perempuan</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block mb-2 font-label-md">Tempat Lahir</label>
+                                <input type="text" id="guruTempatLahir" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5">
+                            </div>
+                            <div>
+                                <label class="block mb-2 font-label-md">Tanggal Lahir</label>
+                                <input type="date" id="guruTanggalLahir" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- KONTAK & ALAMAT -->
+                    <div>
+                        <h4 class="font-label-md text-primary uppercase tracking-wide mb-3 pb-2 border-b border-outline-variant/30">Kontak & Alamat</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block mb-2 font-label-md">Email</label>
+                                <input type="email" id="guruEmail" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5">
+                            </div>
+                            <div>
+                                <label class="block mb-2 font-label-md">Telepon</label>
+                                <input type="tel" id="guruTelepon" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block mb-2 font-label-md">Alamat Lengkap</label>
+                                <textarea id="guruAlamat" rows="2" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5 resize-none"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- KEPEGAWAIAN -->
+                    <div>
+                        <h4 class="font-label-md text-primary uppercase tracking-wide mb-3 pb-2 border-b border-outline-variant/30">Kepegawaian</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block mb-2 font-label-md">Jabatan</label>
+                                <select id="guruJabatan" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5">
+                                    <option value="Guru Mata Pelajaran">Guru Mata Pelajaran</option>
+                                    <option value="Wali Kelas">Wali Kelas</option>
+                                    <option value="Kepala Sekolah">Kepala Sekolah</option>
+                                    <option value="Wakil Kepala Sekolah">Wakil Kepala Sekolah</option>
+                                    <option value="Kepala Jurusan">Kepala Jurusan</option>
+                                    <option value="Staf TU">Staf TU</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block mb-2 font-label-md">Mata Pelajaran</label>
+                                <input type="text" id="guruMapel" placeholder="Misal: Matematika" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5">
+                            </div>
+                            <div>
+                                <label class="block mb-2 font-label-md">Status Kepegawaian</label>
+                                <select id="guruStatusKepegawaian" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5">
+                                    <option value="PNS">PNS</option>
+                                    <option value="PPPK">PPPK</option>
+                                    <option value="Honorer">Honorer</option>
+                                    <option value="Kontrak">Kontrak</option>
+                                    <option value="Tetap Yayasan">Tetap Yayasan</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block mb-2 font-label-md">Status Aktif</label>
+                                <select id="guruStatus" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5">
+                                    <option value="Aktif">Aktif</option>
+                                    <option value="Tidak Aktif">Tidak Aktif</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-primary/5 rounded-lg p-4 border border-primary/20">
+                        <p class="text-sm text-on-surface-variant mb-2 font-medium">🔐 Informasi Akun Login (dibuat otomatis)</p>
+                        <p class="text-xs text-on-surface-variant">Username = NIP atau NUPTK<br>Password = 123456</p>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3 pt-4 border-t">
+                        <button type="button" onclick="closeModalGuru()" class="px-5 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest">Batal</button>
+                        <button type="submit" class="px-5 py-2 rounded-lg bg-primary text-on-primary hover:opacity-90 shadow-sm">Simpan & Buat Akun</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    await loadAllGuru();
+}
+
+async function loadAllGuru() {
+    try {
+        const sb = getSupabase();
+        const { data } = await sb.from('profil_guru').select('*,user:user_id(*)').order('nama_lengkap');
+        allGuruData = data || [];
+        filterGuru();
+    } catch (e) {
+        showToast('Gagal memuat data guru: ' + e.message, 'error');
+    }
+}
+
+function filterGuru() {
+    const search = (document.getElementById('searchGuru')?.value || '').toLowerCase();
+    const jk = document.getElementById('filterJKGuru')?.value || '';
+    const jabatan = document.getElementById('filterJabatanGuru')?.value || '';
+    const status = document.getElementById('filterStatusGuru')?.value || '';
+    
+    let filtered = allGuruData.filter(g => {
+        const matchSearch = !search || 
+            (g.nama_lengkap || '').toLowerCase().includes(search) ||
+            (g.nip || '').includes(search) ||
+            (g.nuptk || '').includes(search);
+        const matchJK = !jk || g.jenis_kelamin === jk;
+        const matchJabatan = !jabatan || g.jabatan === jabatan;
+        const matchStatus = !status || g.status_aktif === status;
+        return matchSearch && matchJK && matchJabatan && matchStatus;
+    });
+    
+    guruPage = 1;
+    renderGuruTable(filtered);
+}
+
+function renderGuruTable(data) {
+    const tbody = document.getElementById('tableGuru');
+    const start = (guruPage - 1) * guruPerPage;
+    const pageData = data.slice(start, start + guruPerPage);
+    
+    if (pageData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-on-surface-variant">Tidak ada data guru</td></tr>';
+        document.getElementById('guruPaginationInfo').textContent = 'Menampilkan 0 data';
+        document.getElementById('guruPaginationButtons').innerHTML = '';
+        return;
+    }
+    
+    tbody.innerHTML = pageData.map((g, i) => {
+        const akunWarna = g.user ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700';
+        const jk = g.jenis_kelamin ? g.jenis_kelamin.charAt(0) : '-';
+        const jkWarna = g.jenis_kelamin === 'Laki-laki' ? 'bg-blue-100 text-blue-700' : 
+                       g.jenis_kelamin === 'Perempuan' ? 'bg-pink-100 text-pink-700' : 'bg-gray-100 text-gray-600';
+        return `
+        <tr class="border-b border-surface-container-highest table-row-hover">
+            <td class="p-3 text-center text-on-surface-variant">${start + i + 1}</td>
+            <td class="p-3 font-semibold">${g.nama_lengkap || '-'}</td>
+            <td class="p-3 font-mono text-sm">${g.nip || '-'}</td>
+            <td class="p-3 font-mono text-sm">${g.nuptk || '-'}</td>
+            <td class="p-3 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${jkWarna}">${jk}</span></td>
+            <td class="p-3">${g.jabatan || '-'}</td>
+            <td class="p-3 text-center">
+                <button onclick="editGuru('${g.id}')" class="p-1.5 text-primary hover:bg-primary/10 rounded" title="Edit">
+                    <span class="material-symbols-outlined text-[18px]">edit</span>
+                </button>
+                ${!g.user ? `<button onclick="buatAkunGuru('${g.id}')" class="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Buat Akun">
+                    <span class="material-symbols-outlined text-[18px]">person_add</span>
+                </button>` : ''}
+                <button onclick="hapusGuru('${g.id}')" class="p-1.5 text-error hover:bg-error/10 rounded" title="Hapus">
+                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+    
+    document.getElementById('guruPaginationInfo').textContent = `Menampilkan ${start + 1}-${Math.min(start + guruPerPage, data.length)} dari ${data.length} data`;
+    const totalPages = Math.ceil(data.length / guruPerPage);
+    document.getElementById('guruPaginationButtons').innerHTML = renderPaginationHTML(guruPage, totalPages, 'guruPage', 'filterGuru');
+}
+
+function showModalGuru() {
+    document.getElementById('modalGuruTitle').textContent = 'Tambah Guru Baru';
+    document.getElementById('formGuru').reset();
+    document.getElementById('guruId').value = '';
+    document.getElementById('guruUserId').value = '';
+    document.getElementById('modalGuru').classList.remove('hidden');
+}
+
+function closeModalGuru() {
+    document.getElementById('modalGuru').classList.add('hidden');
+}
+
+async function editGuru(id) {
+    const g = allGuruData.find(x => String(x.id) === String(id));
+    if (!g) return;
+    
+    document.getElementById('modalGuruTitle').textContent = 'Edit Data Guru';
+    document.getElementById('guruId').value = g.id;
+    document.getElementById('guruUserId').value = g.user_id || '';
+    document.getElementById('guruNama').value = g.nama_lengkap || '';
+    document.getElementById('guruNip').value = g.nip || '';
+    document.getElementById('guruNuptk').value = g.nuptk || '';
+    document.getElementById('guruJK').value = g.jenis_kelamin || '';
+    document.getElementById('guruTempatLahir').value = g.tempat_lahir || '';
+    document.getElementById('guruTanggalLahir').value = g.tanggal_lahir || '';
+    document.getElementById('guruEmail').value = g.email || '';
+    document.getElementById('guruTelepon').value = g.telepon || '';
+    document.getElementById('guruAlamat').value = g.alamat || '';
+    document.getElementById('guruJabatan').value = g.jabatan || 'Guru Mata Pelajaran';
+    document.getElementById('guruMapel').value = g.mata_pelajaran || '';
+    document.getElementById('guruStatusKepegawaian').value = g.status_kepegawaian || 'PNS';
+    document.getElementById('guruStatus').value = g.status_aktif || 'Aktif';
+    document.getElementById('modalGuru').classList.remove('hidden');
+}
+
+async function simpanDataGuru() {
+    showLoading('Menyimpan data guru...');
+    try {
+        const sb = getSupabase();
+        const id = document.getElementById('guruId').value;
+        
+        const dataGuru = {
+            nama_lengkap: document.getElementById('guruNama').value.trim(),
+            nip: document.getElementById('guruNip').value.trim() || null,
+            nuptk: document.getElementById('guruNuptk').value.trim() || null,
+            jenis_kelamin: document.getElementById('guruJK').value || null,
+            tempat_lahir: document.getElementById('guruTempatLahir').value.trim() || null,
+            tanggal_lahir: document.getElementById('guruTanggalLahir').value || null,
+            email: document.getElementById('guruEmail').value.trim() || null,
+            telepon: document.getElementById('guruTelepon').value.trim() || null,
+            alamat: document.getElementById('guruAlamat').value.trim() || null,
+            jabatan: document.getElementById('guruJabatan').value,
+            mata_pelajaran: document.getElementById('guruMapel').value.trim() || null,
+            status_kepegawaian: document.getElementById('guruStatusKepegawaian').value,
+            status_aktif: document.getElementById('guruStatus').value
+        };
+        
+        if (!dataGuru.nama_lengkap) {
+            hideLoading();
+            showToast('Nama lengkap wajib diisi!', 'error');
+            return;
+        }
+        
+        let username = dataGuru.nip || dataGuru.nuptk;
+        let password = '123456';
+        
+        if (id) {
+            // UPDATE
+            const { error } = await sb.from('profil_guru').update(dataGuru).eq('id', id);
+            if (error) throw error;
+            hideLoading();
+            closeModalGuru();
+            showToast('Data guru berhasil diperbarui!', 'success');
+        } else {
+            // INSERT + BUAT AKUN OTOMATIS
+            const { data: guruBaru, error } = await sb.from('profil_guru').insert(dataGuru).select().single();
+            if (error) throw error;
+            
+            if (username) {
+                const { data: userBaru, error: errUser } = await sb.from('users').insert({
+                    username: username,
+                    password: password,
+                    level: 'guru',
+                    status: 'Aktif',
+                    id_referensi: guruBaru.id
+                }).select().single();
+                
+                if (!errUser && userBaru) {
+                    await sb.from('profil_guru').update({ user_id: userBaru.id }).eq('id', guruBaru.id);
+                    showToast('✅ Akun dibuat! Username: ' + username + ' | Password: ' + password, 'success');
+                } else {
+                    showToast('Guru tersimpan, tapi gagal buat akun login', 'warning');
+                }
+            } else {
+                showToast('Guru tersimpan. Isi NIP/NUPTK untuk membuat akun login', 'info');
+            }
+            
+            hideLoading();
+            closeModalGuru();
+        }
+        
+        await loadAllGuru();
+        if (currentUser) catatLog(currentUser.username, id ? 'Edit Guru' : 'Tambah Guru', dataGuru.nama_lengkap);
+        
+    } catch (e) {
+        hideLoading();
+        showToast('Gagal: ' + e.message, 'error');
+    }
+}
+
+async function buatAkunGuru(id) {
+    const g = allGuruData.find(x => String(x.id) === String(id));
+    if (!g) return;
+    
+    const username = g.nip || g.nuptk;
+    if (!username) {
+        showToast('Guru ini belum memiliki NIP atau NUPTK. Edit data terlebih dahulu.', 'warning');
+        return;
+    }
+    
+    showModalConfirm('Buat Akun Login', 
+        'Buat akun login untuk ' + g.nama_lengkap + '?\nUsername: ' + username + '\nPassword: 123456',
+        async function() {
+            showLoading('Membuat akun...');
+            try {
+                const sb = getSupabase();
+                const { data: userBaru, error } = await sb.from('users').insert({
+                    username: username,
+                    password: '123456',
+                    level: 'guru',
+                    status: 'Aktif',
+                    id_referensi: g.id
+                }).select().single();
+                
+                if (error) throw error;
+                
+                await sb.from('profil_guru').update({ user_id: userBaru.id }).eq('id', g.id);
+                
+                hideLoading();
+                showToast('✅ Akun berhasil dibuat! Username: ' + username, 'success');
+                await loadAllGuru();
+                catatLog(currentUser.username, 'Buat Akun Guru', g.nama_lengkap);
+            } catch (e) {
+                hideLoading();
+                showToast('Gagal: ' + e.message, 'error');
+            }
+        });
+}
+
+async function hapusGuru(id) {
+    const g = allGuruData.find(x => String(x.id) === String(id));
+    if (!g) return;
+    
+    showModalConfirm('Hapus Data Guru', 
+        'Yakin ingin menghapus ' + g.nama_lengkap + '?\nData akun login juga akan ikut terhapus.',
+        async function() {
+            showLoading('Menghapus...');
+            try {
+                const sb = getSupabase();
+                // Hapus akun user dulu jika ada
+                if (g.user_id) {
+                    await sb.from('users').delete().eq('id', g.user_id);
+                }
+                // Hapus profil guru
+                await sb.from('profil_guru').delete().eq('id', id);
+                
+                hideLoading();
+                showToast('Data guru berhasil dihapus!', 'success');
+                await loadAllGuru();
+                catatLog(currentUser.username, 'Hapus Guru', g.nama_lengkap);
+            } catch (e) {
+                hideLoading();
+                showToast('Gagal: ' + e.message, 'error');
+            }
+        });
+}
+// ============================================================
+// ✅ AKHIR FITUR DATA GURU
+// ============================================================
+
+
+// ============================================================
+// ✅ MENU AKUN PENGGUNA - Terpusat (Admin, Guru, Siswa)
+// ============================================================
+let allAkunData = [];
+let akunPage = 1;
+let akunTabAktif = 'semua';
+const akunPerPage = 10;
+const DOMAIN_EMAIL = 'presensiqr.sch.id';
+const PASSWORD_DEFAULT = '12345678';
+
+// Fungsi bantu: buat username email dari nama
+function buatUsernameDariNama(nama, level) {
+    if (!nama) return '';
+    // Untuk admin, gunakan format khusus
+    if (level === 'admin') {
+        return 'administrator@' + DOMAIN_EMAIL;
+    }
+    // Bersihkan nama: lowercase, ganti spasi dengan titik, hapus karakter khusus
+    let username = nama.toLowerCase().trim();
+    username = username.replace(/[^a-z0-9\s]/g, ''); // Hanya huruf, angka, spasi
+    username = username.replace(/\s+/g, ''); // Spasi jadi titik
+    username = username.replace(/\.+/g, '.'); // Hilangkan titik ganda
+    username = username.replace(/^\.|\.$/g, ''); // Hilangkan titik di awal/akhir
+    if (!username) return '';
+    return username + '@' + DOMAIN_EMAIL;
+}
+
+async function loadAkunPengguna() {
+    const contentArea = document.getElementById('content-area');
+    contentArea.innerHTML = `
+        <div>
+            <div class="mb-stack-lg flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div>
+                    <h1 class="text-headline-lg font-headline-lg text-on-surface mb-1">Akun Pengguna</h1>
+                    <p class="text-body-md text-on-surface-variant">Kelola akun login untuk Admin, Guru, dan Siswa secara terpusat.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="showModalGenerateMasal()" class="flex items-center justify-center gap-2 px-4 py-2 bg-surface-container-lowest border border-primary text-primary rounded-lg hover:bg-primary/5 shadow-sm font-bold text-sm">
+                        <span class="material-symbols-outlined text-[18px]">bolt</span>Generate Masal
+                    </button>
+                    <button onclick="showModalAkun()" class="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 shadow-sm font-bold text-sm">
+                        <span class="material-symbols-outlined text-[18px]">add</span>Tambah Akun
+                    </button>
+                </div>
+            </div>
+            
+            <!-- TAB FILTER -->
+            <div class="flex gap-1 mb-stack-md bg-surface-container p-1 rounded-lg w-fit">
+                <button onclick="gantiTabAkun('semua')" id="tab-semua" class="akun-tab px-4 py-2 rounded-md text-sm font-medium transition-all bg-white text-primary shadow-sm">
+                    Semua Akun
+                </button>
+                <button onclick="gantiTabAkun('admin')" id="tab-admin" class="akun-tab px-4 py-2 rounded-md text-sm font-medium transition-all text-on-surface-variant hover:bg-white/50">
+                    Admin
+                </button>
+                <button onclick="gantiTabAkun('guru')" id="tab-guru" class="akun-tab px-4 py-2 rounded-md text-sm font-medium transition-all text-on-surface-variant hover:bg-white/50">
+                    Guru
+                </button>
+                <button onclick="gantiTabAkun('siswa')" id="tab-siswa" class="akun-tab px-4 py-2 rounded-md text-sm font-medium transition-all text-on-surface-variant hover:bg-white/50">
+                    Siswa
+                </button>
+            </div>
+            
+            <!-- FILTER & PENCARIAN -->
+            <div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-surface-container-highest mb-stack-md flex flex-col md:flex-row gap-4 items-center">
+                <div class="relative w-full md:w-96">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+                    <input type="text" id="searchAkun" placeholder="Cari username atau nama..." oninput="filterAkun()"
+                        class="w-full pl-10 pr-4 py-2 bg-surface border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container">
+                </div>
+                <div class="flex gap-2 w-full md:w-auto">
+                    <select id="filterStatusAkun" onchange="filterAkun()" class="w-full md:w-40 px-4 py-2 bg-surface border border-outline-variant rounded-lg">
+                        <option value="">Semua Status</option>
+                        <option value="Aktif">Aktif</option>
+                        <option value="Tidak Aktif">Tidak Aktif</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- TABEL -->
+            <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container-highest overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-label-md uppercase tracking-wider border-b" style="background: linear-gradient(to bottom right, #004349, #0d5c63); color: white; whitespace-nowrap">
+                                <th class="p-3 w-12 text-center">No</th>
+                                <th class="p-3">Username</th>
+                                <th class="p-3 w-28 text-center">Level</th>
+                                <th class="p-3">Nama Pengguna</th>
+                                <th class="p-3 w-24 text-center">Status</th>
+                                <th class="p-3 w-44 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableAkun" class="text-body-md text-on-surface">
+                            <tr><td colspan="6" class="p-8 text-center text-on-surface-variant">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="flex justify-between items-center p-4 bg-surface border-t">
+                    <span class="text-sm text-on-surface-variant" id="akunPaginationInfo">Menampilkan 0 data</span>
+                    <div class="flex gap-1" id="akunPaginationButtons"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- MODAL TAMBAH/EDIT AKUN -->
+        <div id="modalAkun" class="fixed inset-0 z-[9997] hidden">
+            <div class="modal-overlay absolute inset-0" onclick="closeModalAkun()"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container-lowest rounded-xl shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="p-6 border-b flex items-center justify-between sticky top-0 z-10" 
+                     style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
+                    <h3 class="font-headline-sm font-bold flex items-center gap-2" style="color: white;">
+                        <span class="material-symbols-outlined" style="color: white;">person_add</span>
+                        <span id="modalAkunTitle">Tambah Akun Baru</span>
+                    </h3>
+                    <button onclick="closeModalAkun()" class="p-2 rounded-lg hover:bg-white/10 transition-colors">
+                        <span class="material-symbols-outlined" style="color: white;">close</span>
+                    </button>
+                </div>
+                <form id="formAkun" onsubmit="event.preventDefault(); simpanAkun();" class="p-6 space-y-4">
+                    <input type="hidden" id="akunId">
+                    
+                    <div>
+                        <label class="block mb-2 font-label-md">Level Pengguna *</label>
+                        <select id="akunLevel" onchange="updateSaranUsername()" required class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5">
+                            <option value="">-- Pilih Level --</option>
+                            <option value="admin">Admin</option>
+                            <option value="guru">Guru</option>
+                            <option value="siswa">Siswa</option>
+                        </select>
+                    </div>
+                    
+                    <div id="fieldReferensi" style="display:none;">
+                        <label class="block mb-2 font-label-md" id="labelReferensi">Pilih Guru</label>
+                        <!-- CUSTOM DROPDOWN: search ada di dalam popup -->
+                        <div class="custom-dropdown relative" id="customDropdownReferensi">
+                            <div class="dropdown-toggle w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5 cursor-pointer flex items-center justify-between hover:border-primary transition-colors"
+                                 onclick="toggleCustomDropdown(event)">
+                                <span id="dropdownLabel" class="text-on-surface-variant">-- Pilih --</span>
+                                <span class="material-symbols-outlined text-on-surface-variant text-base">arrow_drop_down</span>
+                            </div>
+                            <div class="dropdown-menu absolute top-full left-0 right-0 mt-1 bg-surface-container-lowest border border-outline-variant rounded-lg shadow-xl z-50 hidden overflow-hidden">
+                                <div class="p-2 border-b border-outline-variant/30 bg-surface-container-low">
+                                    <div class="relative">
+                                        <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-base">search</span>
+                                        <input type="text" id="searchReferensi" placeholder="Cari nama atau NISN..." oninput="filterReferensiCustom()"
+                                            class="w-full pl-9 pr-3 py-2 bg-surface-bright border border-outline-variant rounded-md text-sm focus:outline-none focus:border-primary">
+                                    </div>
+                                </div>
+                                <div id="dropdownOptions" class="max-h-60 overflow-y-auto">
+                                    <!-- Opsi akan diisi oleh JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="akunReferensi" value="">
+                        <p class="text-xs text-on-surface-variant mt-1">Klik dropdown, ketik untuk mencari, lalu pilih nama</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block mb-2 font-label-md">Username *</label>
+                        <input type="text" id="akunUsername" required placeholder="nama@presensiqr.sch.id" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5 font-mono">
+                        <p class="text-xs text-on-surface-variant mt-1">Format: <code class="bg-surface-container px-1.5 py-0.5 rounded">nama@presensiqr.sch.id</code></p>
+                    </div>
+                    
+                    <div>
+                        <label class="block mb-2 font-label-md">Password *</label>
+                        <input type="text" id="akunPassword" required class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5 font-mono" value="${PASSWORD_DEFAULT}">
+                        <p class="text-xs text-on-surface-variant mt-1">Password default: <code class="bg-surface-container px-1.5 py-0.5 rounded">${PASSWORD_DEFAULT}</code></p>
+                    </div>
+                    
+                    <div>
+                        <label class="block mb-2 font-label-md">Status</label>
+                        <select id="akunStatus" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5">
+                            <option value="Aktif">Aktif</option>
+                            <option value="Tidak Aktif">Tidak Aktif</option>
+                        </select>
+                    </div>
+                    
+                    <div class="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                        <p class="text-sm text-amber-800 mb-1 font-medium">⚠️ Catatan</p>
+                        <p class="text-xs text-amber-700">Untuk Guru/Siswa, sebaiknya data master sudah dibuat terlebih dahulu di menu Data Guru / Data Siswa agar akun bisa terhubung.</p>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3 pt-4 border-t">
+                        <button type="button" onclick="closeModalAkun()" class="px-5 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest">Batal</button>
+                        <button type="submit" class="px-5 py-2 rounded-lg bg-primary text-on-primary hover:opacity-90 shadow-sm">Simpan Akun</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- MODAL GENERATE MASAL -->
+        <div id="modalGenerateMasal" class="fixed inset-0 z-[9997] hidden">
+            <div class="modal-overlay absolute inset-0" onclick="closeModalGenerateMasal()"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container-lowest rounded-xl shadow-xl max-w-lg w-full mx-4">
+                <div class="p-6 border-b flex items-center justify-between" 
+                     style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
+                    <h3 class="font-headline-sm font-bold flex items-center gap-2" style="color: white;">
+                        <span class="material-symbols-outlined" style="color: white;">bolt</span>
+                        Generate Akun Masal
+                    </h3>
+                    <button onclick="closeModalGenerateMasal()" class="p-2 rounded-lg hover:bg-white/10 transition-colors">
+                        <span class="material-symbols-outlined" style="color: white;">close</span>
+                    </button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="block mb-2 font-label-md">Generate untuk level *</label>
+                        <select id="generateLevel" onchange="cekDataGenerate()" class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5">
+                            <option value="">-- Pilih Level --</option>
+                            <option value="guru">Guru (yang belum punya akun)</option>
+                            <option value="siswa">Siswa (yang belum punya akun)</option>
+                        </select>
+                    </div>
+                    
+                    <div id="infoGenerate" class="hidden bg-blue-50 rounded-lg p-4 border border-blue-200">
+                        <p class="text-sm text-blue-800 mb-2 font-medium">📋 Informasi Generate</p>
+                        <div id="isiInfoGenerate" class="text-xs text-blue-700 space-y-1"></div>
+                    </div>
+                    
+                    <div class="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                        <p class="text-sm text-amber-800 mb-1 font-medium">📌 Format yang akan dibuat</p>
+                        <p class="text-xs text-amber-700 space-y-0.5">
+                            • Username: <code>nama@${DOMAIN_EMAIL}</code><br>
+                            • Password: <code>${PASSWORD_DEFAULT}</code> (semua sama)<br>
+                            • Hanya data yang <b>BELUM</b> punya akun yang akan dibuatkan
+                        </p>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3 pt-2 border-t">
+                        <button type="button" onclick="closeModalGenerateMasal()" class="px-5 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest">Batal</button>
+                        <button type="button" onclick="jalankanGenerateMasal()" id="btnGenerateMasal" disabled class="px-5 py-2 rounded-lg bg-primary text-on-primary hover:opacity-90 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                            Mulai Generate
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- MODAL RESET PASSWORD -->
+        <div id="modalResetPassword" class="fixed inset-0 z-[9997] hidden">
+            <div class="modal-overlay absolute inset-0" onclick="closeModalResetPassword()"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container-lowest rounded-xl shadow-xl max-w-md w-full mx-4">
+                <div class="p-6 border-b flex items-center justify-between" 
+                     style="background: linear-gradient(to bottom right, #004349, #0d5c63);">
+                    <h3 class="font-headline-sm font-bold flex items-center gap-2" style="color: white;">
+                        <span class="material-symbols-outlined" style="color: white;">key</span>
+                        Reset Password
+                    </h3>
+                    <button onclick="closeModalResetPassword()" class="p-2 rounded-lg hover:bg-white/10 transition-colors">
+                        <span class="material-symbols-outlined" style="color: white;">close</span>
+                    </button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <input type="hidden" id="resetAkunId">
+                    <p class="text-sm text-on-surface-variant">Reset password untuk akun:</p>
+                    <p id="resetAkunUsername" class="font-mono text-on-surface font-semibold bg-surface-container p-3 rounded-lg"></p>
+                    <div>
+                        <label class="block mb-2 font-label-md">Password Baru *</label>
+                        <input type="text" id="resetPasswordBaru" required class="w-full bg-surface-bright border border-outline-variant rounded-lg px-4 py-2.5 font-mono" value="${PASSWORD_DEFAULT}">
+                    </div>
+                    <div class="flex justify-end gap-3 pt-2 border-t">
+                        <button type="button" onclick="closeModalResetPassword()" class="px-5 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest">Batal</button>
+                        <button type="button" onclick="simpanResetPassword()" class="px-5 py-2 rounded-lg bg-primary text-on-primary hover:opacity-90 shadow-sm">Reset Password</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    await loadAllAkun();
+}
+
+async function loadAllAkun() {
+    try {
+        const sb = getSupabase();
+        
+        // Load SEMUA data sekaligus (paralel) - LEBIH CEPAT
+        const [usersResult, siswaResult, guruResult, adminResult] = await Promise.all([
+            sb.from('users').select('*').order('username'),
+            sb.from('siswa').select('id, nama_lengkap'),
+            sb.from('profil_guru').select('id, user_id, nama_lengkap'),
+            sb.from('profil_admin').select('user_id, nama_lengkap')
+        ]);
+        
+        allAkunData = usersResult.data || [];
+        
+        // Buat mapping untuk pencarian cepat (tanpa query ulang)
+        const mapSiswa = {};
+        const mapGuruByUserId = {};
+        const mapGuruById = {};
+        const mapAdmin = {};
+        
+        (siswaResult.data || []).forEach(s => { mapSiswa[s.id] = s.nama_lengkap; });
+        (guruResult.data || []).forEach(g => { 
+            if (g.user_id) mapGuruByUserId[g.user_id] = g.nama_lengkap;
+            mapGuruById[g.id] = { nama: g.nama_lengkap, user_id: g.user_id };
+        });
+        (adminResult.data || []).forEach(a => { mapAdmin[a.user_id] = a.nama_lengkap; });
+        
+        // Simpan mapping untuk dipakai fungsi lain
+        window._mapSiswa = mapSiswa;
+        window._mapGuruByUserId = mapGuruByUserId;
+        window._mapGuruById = mapGuruById;
+        window._mapAdmin = mapAdmin;
+        
+        // Isi nama_pengguna secara lokal (SANGAT CEPAT)
+        for (const u of allAkunData) {
+            if (u.level === 'siswa' && u.id_referensi) {
+                u.nama_pengguna = mapSiswa[u.id_referensi] || '-';
+            } else if (u.level === 'guru') {
+                u.nama_pengguna = mapGuruByUserId[u.id] || '-';
+            } else if (u.level === 'admin') {
+                u.nama_pengguna = mapAdmin[u.id] || 'Administrator';
+            } else {
+                u.nama_pengguna = '-';
+            }
+        }
+        
+        filterAkun();
+    } catch (e) {
+        showToast('Gagal memuat data akun: ' + e.message, 'error');
+    }
+}
+
+function gantiTabAkun(tab) {
+    akunTabAktif = tab;
+    akunPage = 1;
+    
+    // Update style tab
+    document.querySelectorAll('.akun-tab').forEach(btn => {
+        btn.classList.remove('bg-white', 'text-primary', 'shadow-sm');
+        btn.classList.add('text-on-surface-variant', 'hover:bg-white/50');
+    });
+    const aktif = document.getElementById('tab-' + tab);
+    if (aktif) {
+        aktif.classList.add('bg-white', 'text-primary', 'shadow-sm');
+        aktif.classList.remove('text-on-surface-variant', 'hover:bg-white/50');
+    }
+    
+    filterAkun();
+}
+
+function filterAkun() {
+    const search = (document.getElementById('searchAkun')?.value || '').toLowerCase();
+    const status = document.getElementById('filterStatusAkun')?.value || '';
+    
+    let filtered = allAkunData.filter(u => {
+        const matchTab = akunTabAktif === 'semua' || u.level === akunTabAktif;
+        const matchSearch = !search || 
+            (u.username || '').toLowerCase().includes(search) ||
+            (u.nama_pengguna || '').toLowerCase().includes(search);
+        const matchStatus = !status || u.status === status;
+        return matchTab && matchSearch && matchStatus;
+    });
+    
+    renderAkunTable(filtered);
+}
+
+function renderAkunTable(data) {
+    const tbody = document.getElementById('tableAkun');
+    const start = (akunPage - 1) * akunPerPage;
+    const pageData = data.slice(start, start + akunPerPage);
+    
+    if (pageData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-on-surface-variant">Tidak ada data akun</td></tr>';
+        document.getElementById('akunPaginationInfo').textContent = 'Menampilkan 0 data';
+        document.getElementById('akunPaginationButtons').innerHTML = '';
+        return;
+    }
+    
+    tbody.innerHTML = pageData.map((u, i) => {
+        const levelWarna = {
+            'admin': 'bg-red-100 text-red-700',
+            'guru': 'bg-blue-100 text-blue-700',
+            'siswa': 'bg-green-100 text-green-700'
+        };
+        const statusWarna = u.status === 'Aktif' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600';
+        const levelLabel = { 'admin': 'Admin', 'guru': 'Guru', 'siswa': 'Siswa' };
+        
+        return `
+        <tr class="border-b border-surface-container-highest table-row-hover">
+            <td class="p-3 text-center text-on-surface-variant">${start + i + 1}</td>
+            <td class="p-3 font-mono text-sm">${u.username || '-'}</td>
+            <td class="p-3 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${levelWarna[u.level] || 'bg-gray-100'}">${levelLabel[u.level] || u.level}</span></td>
+            <td class="p-3">${u.nama_pengguna || '-'}</td>
+            <td class="p-3 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${statusWarna}">${u.status || '-'}</span></td>
+            <td class="p-3 text-center">
+                <button onclick="editAkun('${u.id}')" class="p-1.5 text-primary hover:bg-primary/10 rounded" title="Edit">
+                    <span class="material-symbols-outlined text-[18px]">edit</span>
+                </button>
+                <button onclick="resetPasswordAkun('${u.id}', '${u.username}')" class="p-1.5 text-amber-600 hover:bg-amber-50 rounded" title="Reset Password">
+                    <span class="material-symbols-outlined text-[18px]">key</span>
+                </button>
+                <button onclick="hapusAkun('${u.id}', '${u.username}')" class="p-1.5 text-error hover:bg-error/10 rounded" title="Hapus">
+                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+    
+    document.getElementById('akunPaginationInfo').textContent = `Menampilkan ${start + 1}-${Math.min(start + akunPerPage, data.length)} dari ${data.length} data`;
+    const totalPages = Math.ceil(data.length / akunPerPage);
+    document.getElementById('akunPaginationButtons').innerHTML = renderPaginationHTML(akunPage, totalPages, 'akunPage', 'filterAkun');
+}
+
+// ============================================================
+// MODAL TAMBAH/EDIT AKUN
+// ============================================================
+function showModalAkun() {
+    document.getElementById('modalAkunTitle').textContent = 'Tambah Akun Baru';
+    document.getElementById('formAkun').reset();
+    document.getElementById('akunId').value = '';
+    document.getElementById('akunPassword').value = PASSWORD_DEFAULT;
+    document.getElementById('akunLevel').disabled = false; // ⭐ Pastikan level bisa dipilih
+    document.getElementById('fieldReferensi').style.display = 'none';
+    resetCustomDropdown(); // Reset dropdown referensi
+    document.getElementById('modalAkun').classList.remove('hidden');
+}
+
+function closeModalAkun() {
+    document.getElementById('modalAkun').classList.add('hidden');
+    document.getElementById('akunLevel').disabled = false; // ⭐ Aktifkan kembali level
+}
+
+async function updateSaranUsername() {
+    const level = document.getElementById('akunLevel').value;
+    const fieldRef = document.getElementById('fieldReferensi');
+    const labelRef = document.getElementById('labelReferensi');
+    resetCustomDropdown();
+    const selectRef = document.getElementById('akunReferensi');
+    
+    if (!level) {
+        fieldRef.style.display = 'none';
+        return;
+    }
+    
+    if (level === 'admin') {
+        fieldRef.style.display = 'none';
+        document.getElementById('akunUsername').value = 'administrator@' + DOMAIN_EMAIL;
+        return;
+    }
+    
+    // Tampilkan field referensi untuk guru/siswa
+    fieldRef.style.display = 'block';
+    labelRef.textContent = level === 'guru' ? 'Pilih Guru' : 'Pilih Siswa';
+    
+    // Bersihkan kolom pencarian dan select
+    document.getElementById('searchReferensi').value = '';
+    
+    // Load data referensi (cepat, dari mapping atau DB)
+    if (!window._refData || window._refDataLevel !== level) {
+        try {
+            const sb = getSupabase();
+            window._refData = [];
+            
+            if (level === 'guru') {
+                if (window._mapGuruById) {
+                    Object.keys(window._mapGuruById).forEach(id => {
+                        const g = window._mapGuruById[id];
+                        if (!g.user_id) {
+                            window._refData.push({ id: parseInt(id), nama: g.nama, kode: g.nip || '' });
+                        }
+                    });
+                } else {
+                    const { data } = await sb.from('profil_guru').select('id, nama_lengkap, nip, user_id').order('nama_lengkap');
+                    if (data) {
+                        data.forEach(g => {
+                            if (g.user_id) return;
+                            window._refData.push({ id: g.id, nama: g.nama_lengkap, kode: g.nip || '' });
+                        });
+                    }
+                }
+            } else if (level === 'siswa') {
+                const { data } = await sb.from('siswa').select('id, nama_lengkap, nisn, user_id').order('nama_lengkap');
+                if (data) {
+                    data.forEach(s => {
+                        if (s.user_id) return;
+                        window._refData.push({ id: s.id, nama: s.nama_lengkap, kode: s.nisn || '' });
+                    });
+                }
+            }
+            window._refDataLevel = level;
+        } catch (e) {
+            showToast('Gagal memuat data referensi: ' + e.message, 'error');
+            return;
+        }
+    }
+    
+    // Isi dropdown dengan semua data
+    isiDropdownReferensi(window._refData);
+}
+
+// Isi custom dropdown dengan data - format: "Nama(Kode)"
+function isiDropdownReferensi(dataList) {
+    const container = document.getElementById('dropdownOptions');
+    if (!container) return;
+    
+    if (dataList.length === 0) {
+        container.innerHTML = '<div class="dropdown-empty">Tidak ada data yang cocok</div>';
+        return;
+    }
+    
+    container.innerHTML = '';
+    dataList.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'dropdown-option';
+        div.dataset.id = item.id;
+        div.dataset.nama = item.nama;
+        div.dataset.kode = item.kode || '';
+        div.textContent = item.kode ? item.nama + '(' + item.kode + ')' : item.nama;
+        div.onclick = function() { pilihOpsiCustom(this); };
+        container.appendChild(div);
+    });
+}
+
+// Toggle buka/tutup custom dropdown
+function toggleCustomDropdown(event) {
+    event.stopPropagation();
+    const dropdown = document.getElementById('customDropdownReferensi');
+    dropdown.classList.toggle('open');
+    if (dropdown.classList.contains('open')) {
+        const input = document.getElementById('searchReferensi');
+        if (input) { input.focus(); input.value = ''; }
+        filterReferensiCustom();
+    }
+}
+
+// Tutup dropdown saat klik di luar
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('customDropdownReferensi');
+    if (dropdown && !dropdown.contains(e.target)) {
+        dropdown.classList.remove('open');
+    }
+});
+
+// Saat user memilih opsi
+function pilihOpsiCustom(element) {
+    const id = element.dataset.id;
+    const nama = element.dataset.nama;
+    const kode = element.dataset.kode;
+    
+    document.getElementById('akunReferensi').value = id;
+    const label = document.getElementById('dropdownLabel');
+    label.textContent = kode ? nama + '(' + kode + ')' : nama;
+    label.classList.remove('text-on-surface-variant');
+    label.classList.add('text-on-surface', 'font-medium');
+    
+    document.getElementById('customDropdownReferensi').classList.remove('open');
+    
+    // Update username otomatis
+    const level = document.getElementById('akunLevel').value;
+    document.getElementById('akunUsername').value = buatUsernameDariNama(nama, level);
+}
+
+// Filter custom dropdown berdasarkan pencarian - cari di nama ATAU kode (NISN/NIP)
+function filterReferensiCustom() {
+    const keyword = document.getElementById('searchReferensi').value.toLowerCase().trim();
+    if (!window._refData) return;
+    
+    if (!keyword) {
+        isiDropdownReferensi(window._refData);
+        return;
+    }
+    
+    const filtered = window._refData.filter(r => 
+        r.nama.toLowerCase().includes(keyword) || 
+        (r.kode && r.kode.toLowerCase().includes(keyword))
+    );
+    isiDropdownReferensi(filtered);
+}
+
+// Alias untuk kompatibilitas
+function filterReferensi() {
+    filterReferensiCustom();
+}
+
+// Reset tampilan custom dropdown
+function resetCustomDropdown() {
+    const hiddenInput = document.getElementById('akunReferensi');
+    if (hiddenInput) hiddenInput.value = '';
+    const label = document.getElementById('dropdownLabel');
+    if (label) {
+        label.textContent = '-- Pilih --';
+        label.classList.add('text-on-surface-variant');
+        label.classList.remove('text-on-surface', 'font-medium');
+    }
+    const searchInput = document.getElementById('searchReferensi');
+    if (searchInput) searchInput.value = '';
+    const dropdown = document.getElementById('customDropdownReferensi');
+    if (dropdown) dropdown.classList.remove('open');
+}
+
+// Alias lama - tetap ada agar tidak error
+function onPilihReferensi() {}
+
+async function editAkun(id) {
+    const u = allAkunData.find(x => String(x.id) === String(id));
+    if (!u) return;
+    
+    document.getElementById('modalAkunTitle').textContent = 'Edit Akun';
+    document.getElementById('akunId').value = u.id;
+    document.getElementById('akunLevel').value = u.level;
+    document.getElementById('akunLevel').disabled = true; // Level tidak bisa diubah
+    document.getElementById('akunUsername').value = u.username || '';
+    document.getElementById('akunPassword').value = u.password || '';
+    document.getElementById('akunStatus').value = u.status || 'Aktif';
+    document.getElementById('fieldReferensi').style.display = 'none';
+    document.getElementById('modalAkun').classList.remove('hidden');
+}
+
+async function simpanAkun() {
+    showLoading('Menyimpan akun...');
+    try {
+        const sb = getSupabase();
+        const id = document.getElementById('akunId').value;
+        const level = document.getElementById('akunLevel').value;
+        const username = document.getElementById('akunUsername').value.trim();
+        const password = document.getElementById('akunPassword').value;
+        const status = document.getElementById('akunStatus').value;
+        const refVal = document.getElementById('akunReferensi').value;
+        
+        if (!level || !username || !password) {
+            hideLoading();
+            showToast('Lengkapi semua field yang wajib!', 'error');
+            return;
+        }
+        
+        let id_referensi = null;
+        if (refVal && level !== 'admin') {
+            // Sekarang value select langsung berisi ID (integer)
+            id_referensi = parseInt(refVal) || null;
+        }
+        
+        const dataAkun = {
+            username: username,
+            password: password,
+            level: level,
+            status: status,
+            id_referensi: id_referensi
+        };
+        
+        if (id) {
+            // UPDATE
+            const { error } = await sb.from('users').update(dataAkun).eq('id', id);
+            if (error) throw error;
+            
+            // Jika ada id_referensi untuk guru, update juga user_id di profil_guru
+            if (level === 'guru' && id_referensi) {
+                await sb.from('profil_guru').update({ user_id: id }).eq('id', id_referensi);
+            }
+            // Jika ada id_referensi untuk siswa, update juga user_id di siswa
+            if (level === 'siswa' && id_referensi) {
+                await sb.from('siswa').update({ user_id: id }).eq('id', id_referensi);
+            }
+            
+            hideLoading();
+            closeModalAkun();
+            showToast('Akun berhasil diperbarui!', 'success');
+        } else {
+            // INSERT
+            const { data: akunBaru, error } = await sb.from('users').insert(dataAkun).select().single();
+            if (error) throw error;
+            
+            // Update user_id di tabel referensi
+            if (level === 'guru' && id_referensi) {
+                await sb.from('profil_guru').update({ user_id: akunBaru.id }).eq('id', id_referensi);
+            }
+            if (level === 'siswa' && id_referensi) {
+                await sb.from('siswa').update({ user_id: akunBaru.id }).eq('id', id_referensi);
+            }
+            // Jika admin, coba buat juga profil_admin jika belum ada
+            if (level === 'admin') {
+                try {
+                    const { data: ada } = await sb.from('profil_admin').select('id').eq('user_id', akunBaru.id).maybeSingle();
+                    if (!ada) {
+                        await sb.from('profil_admin').insert({
+                            user_id: akunBaru.id,
+                            nama_lengkap: 'Administrator'
+                        });
+                    }
+                } catch (e) {}
+            }
+            
+            hideLoading();
+            closeModalAkun();
+            showToast('✅ Akun berhasil dibuat! Username: ' + username + ' | Password: ' + password, 'success');
+        }
+        
+        await loadAllAkun();
+        if (currentUser) catatLog(currentUser.username, id ? 'Edit Akun' : 'Tambah Akun', username);
+        
+    } catch (e) {
+        hideLoading();
+        showToast('Gagal: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// RESET PASSWORD
+// ============================================================
+function resetPasswordAkun(id, username) {
+    document.getElementById('resetAkunId').value = id;
+    document.getElementById('resetAkunUsername').textContent = username;
+    document.getElementById('resetPasswordBaru').value = PASSWORD_DEFAULT;
+    document.getElementById('modalResetPassword').classList.remove('hidden');
+}
+
+function closeModalResetPassword() {
+    document.getElementById('modalResetPassword').classList.add('hidden');
+}
+
+async function simpanResetPassword() {
+    showLoading('Reset password...');
+    try {
+        const sb = getSupabase();
+        const id = document.getElementById('resetAkunId').value;
+        const passwordBaru = document.getElementById('resetPasswordBaru').value;
+        
+        if (!passwordBaru || passwordBaru.length < 6) {
+            hideLoading();
+            showToast('Password minimal 6 karakter!', 'error');
+            return;
+        }
+        
+        const { error } = await sb.from('users').update({ password: passwordBaru }).eq('id', id);
+        if (error) throw error;
+        
+        hideLoading();
+        closeModalResetPassword();
+        showToast('Password berhasil direset! Password baru: ' + passwordBaru, 'success');
+    } catch (e) {
+        hideLoading();
+        showToast('Gagal: ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// HAPUS AKUN
+// ============================================================
+async function hapusAkun(id, username) {
+    showModalConfirm('Hapus Akun', 
+        'Yakin ingin menghapus akun ' + username + '?\nData master (Guru/Siswa) tidak akan ikut terhapus.',
+        async function() {
+            showLoading('Menghapus...');
+            try {
+                const sb = getSupabase();
+                await sb.from('users').delete().eq('id', id);
+                
+                hideLoading();
+                showToast('Akun berhasil dihapus!', 'success');
+                await loadAllAkun();
+                catatLog(currentUser.username, 'Hapus Akun', username);
+            } catch (e) {
+                hideLoading();
+                showToast('Gagal: ' + e.message, 'error');
+            }
+        });
+}
+
+// ============================================================
+// GENERATE MASAL
+// ============================================================
+function showModalGenerateMasal() {
+    document.getElementById('generateLevel').value = '';
+    document.getElementById('infoGenerate').classList.add('hidden');
+    document.getElementById('btnGenerateMasal').disabled = true;
+    document.getElementById('modalGenerateMasal').classList.remove('hidden');
+}
+
+function closeModalGenerateMasal() {
+    document.getElementById('modalGenerateMasal').classList.add('hidden');
+}
+
+async function cekDataGenerate() {
+    const level = document.getElementById('generateLevel').value;
+    const infoDiv = document.getElementById('infoGenerate');
+    const isiInfo = document.getElementById('isiInfoGenerate');
+    const btnGenerate = document.getElementById('btnGenerateMasal');
+    
+    if (!level) {
+        infoDiv.classList.add('hidden');
+        btnGenerate.disabled = true;
+        return;
+    }
+    
+    try {
+        const sb = getSupabase();
+        let dataBelumPunyaAkun = [];
+        
+        if (level === 'guru') {
+            const { data } = await sb.from('profil_guru').select('id, nama_lengkap').is('user_id', null).order('nama_lengkap');
+            dataBelumPunyaAkun = data || [];
+        } else if (level === 'siswa') {
+            const { data } = await sb.from('siswa').select('id, nama_lengkap').is('user_id', null).order('nama_lengkap');
+            dataBelumPunyaAkun = data || [];
+        }
+        
+        infoDiv.classList.remove('hidden');
+        isiInfo.innerHTML = `
+            • Jumlah data yang <b>belum</b> punya akun: <b>${dataBelumPunyaAkun.length}</b> ${level === 'guru' ? 'Guru' : 'Siswa'}<br>
+            • Format username: <code>nama@${DOMAIN_EMAIL}</code><br>
+            • Password: <code>${PASSWORD_DEFAULT}</code>
+        `;
+        
+        btnGenerate.disabled = dataBelumPunyaAkun.length === 0;
+        window._dataGenerateMasal = dataBelumPunyaAkun;
+        window._levelGenerateMasal = level;
+        
+    } catch (e) {
+        showToast('Gagal cek data: ' + e.message, 'error');
+    }
+}
+
+async function jalankanGenerateMasal() {
+    const dataList = window._dataGenerateMasal || [];
+    const level = window._levelGenerateMasal;
+    
+    if (dataList.length === 0) {
+        showToast('Tidak ada data untuk digenerate!', 'warning');
+        return;
+    }
+    
+    showModalConfirm('Konfirmasi Generate Masal',
+        `Akan dibuatkan ${dataList.length} akun ${level === 'guru' ? 'Guru' : 'Siswa'} sekaligus.\nLanjutkan?`,
+        async function() {
+            showLoading(`Generate ${dataList.length} akun...`);
+            let berhasil = 0;
+            let gagal = 0;
+            
+            try {
+                const sb = getSupabase();
+                
+                for (const item of dataList) {
+                    try {
+                        const username = buatUsernameDariNama(item.nama_lengkap, level);
+                        if (!username) { gagal++; continue; }
+                        
+                        // Insert ke users
+                        const { data: akunBaru, error } = await sb.from('users').insert({
+                            username: username,
+                            password: PASSWORD_DEFAULT,
+                            level: level,
+                            status: 'Aktif',
+                            id_referensi: item.id
+                        }).select().single();
+                        
+                        if (error) { gagal++; continue; }
+                        
+                        // Update user_id di tabel referensi
+                        if (level === 'guru') {
+                            await sb.from('profil_guru').update({ user_id: akunBaru.id }).eq('id', item.id);
+                        } else if (level === 'siswa') {
+                            await sb.from('siswa').update({ user_id: akunBaru.id }).eq('id', item.id);
+                        }
+                        
+                        berhasil++;
+                    } catch (e) {
+                        gagal++;
+                    }
+                }
+                
+                hideLoading();
+                closeModalGenerateMasal();
+                showToast(`✅ Berhasil: ${berhasil} akun | Gagal: ${gagal} akun`, berhasil > 0 ? 'success' : 'warning');
+                await loadAllAkun();
+                catatLog(currentUser.username, 'Generate Masal Akun', `${level}: ${berhasil} berhasil, ${gagal} gagal`);
+                
+            } catch (e) {
+                hideLoading();
+                showToast('Gagal: ' + e.message, 'error');
+            }
+        });
+}
+// ============================================================
+// ✅ AKHIR MENU AKUN PENGGUNA
 // ============================================================
